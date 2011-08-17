@@ -108,7 +108,7 @@ class IRC:
 
     Here is an example:
 
-        irc = irclib.IRC()
+        irc = irclib3.IRC()
         server = irc.server()
         server.connect(\"irc.some.where\", 6667, \"my_nickname\")
         server.privmsg(\"a_nickname\", \"Hi there!\")
