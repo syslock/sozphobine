@@ -1,6 +1,15 @@
-# irclib3
+# irclib3 -- Internet Relay Chat (IRC) protocol client library
 
-This is a Python 3 port of the irclib from Python 2. I'm basically trying to save it from a complete rewrite. It's a great learning experience to see the real differences in Python 2.x vs Python 3.x.
+This library is intended to encapsulate the IRC protocol at a quite
+low level.  It provides an event-driven IRC client framework.  It has
+a fairly thorough support for the basic IRC protocol, CTCP and DCC
+connections.
+
+In order to understand how to make an IRC client, I'm afraid you more
+or less must understand the IRC specifications.  They are available
+[here](http://www.irchelp.org/irchelp/rfc/).
+
+This is a work in progress port from Python 2 to Python 3.
 
 ## Development
 
