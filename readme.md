@@ -13,7 +13,7 @@ This is a work in progress port from Python 2 to Python 3.
 
 ## Development
 
-It imports! Syntactically, to the interpreter, it looks fine. So far, I've fix the handling and raising of exceptions to be Python 3 compatible. As well as few other small Python 2->3 hiccups. What else works? Who knows, hopefully a things don't take too much effort to patch up as I hack away at the project. 
+It imports! Syntactically, to the interpreter, it looks fine. So far, I've fix the handling and raising of exceptions to be Python 3 compatible, as well as few other small Python 2->3 hiccups. What else works? Who knows, hopefully a things don't take too much effort to patch up as I hack away at the project. 
 
 ## This project sucks!
 
