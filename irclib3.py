@@ -785,7 +785,7 @@ class ServerConnection(Connection):
             if self.ssl:
                 self.ssl.write(string + "\r\n")
             else:
-                self.socket.send(string + "\r\n")
+                self.socket.send(bytes('string + "\r\n"', 'UTF-8'))
             if DEBUG:
                 print("TO SERVER:", string)
         except socket.error as x:
@@ -1003,9 +1003,9 @@ class DCCConnection(Connection):
         CHAT session.
         """
         try:
-            self.socket.send(string)
+            self.socket.send(bytes(string, 'UTF-8'))
             if self.dcctype == "chat":
-                self.socket.send("\n")
+                self.socket.send(bytes("\n", 'UTF-8'))
             if DEBUG:
                 print("TO PEER: %s\n" % string)
         except socket.error as x:
