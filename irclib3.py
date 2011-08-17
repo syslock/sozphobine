@@ -15,7 +15,7 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
 
-"""irclib -- Internet Relay Chat (IRC) protocol client library.
+"""irclib3 -- Internet Relay Chat (IRC) protocol client library.
 
 This library is intended to encapsulate the IRC protocol at a quite
 low level.  It provides an event-driven IRC client framework.  It has
@@ -67,11 +67,12 @@ import sys
 import time
 import types
 
-VERSION = 0, 4, 8
+VERSION = 0, 0, 1
 DEBUG = 0
 
 # TODO
 # ----
+# finish port to python3
 # (maybe) thread safety
 # (maybe) color parser convenience functions
 # documentation (including all event types)
