@@ -591,7 +591,7 @@ class ServerConnection(Connection):
                         command = "umode"
 
                 if DEBUG:
-                    print("command: {0}, source: {1}, target: {2}, arguments: {3}").format(command, prefix, target, arguments))
+                    print("command: {0}, source: {1}, target: {2}, arguments: {3}".format(command, prefix, target, arguments))
                 self._handle_event(Event(command, prefix, target, arguments))
 
     def _handle_event(self, event):
