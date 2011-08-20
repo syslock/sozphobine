@@ -434,7 +434,7 @@ class ServerConnection(Connection):
         except socket.error as x:
             self.socket.close()
             self.socket = None
-            raise ServerConnectionError("Couldn't connect to socket: %s" % x)
+            raise ServerConnectionError("Couldn't connect to socket: {0}".format(x))
         self.connected = 1
         if self.irclibobj.fn_to_add_socket:
             self.irclibobj.fn_to_add_socket(self.socket)
@@ -567,15 +567,13 @@ class ServerConnection(Connection):
 
                         m = list(m)
                         if DEBUG:
-                            print("command: %s, source: %s, target: %s, arguments: %s" % (
-                                command, prefix, target, m))
+                            print("command: {0}, source: {1}, target: {2}, arguments: {3}".format(command, prefix, target, m))
                         self._handle_event(Event(command, prefix, target, m))
                         if command == "ctcp" and m[0] == "ACTION":
                             self._handle_event(Event("action", prefix, target, m[1:]))
                     else:
                         if DEBUG:
-                            print("command: %s, source: %s, target: %s, arguments: %s" % (
-                                command, prefix, target, [m]))
+                            print("command: {0}, source: {1}, target: {2}, arguments: {3}".format(command, prefix, target, [m]))
                         self._handle_event(Event(command, prefix, target, [m]))
             else:
                 target = None
@@ -593,8 +591,7 @@ class ServerConnection(Connection):
                         command = "umode"
 
                 if DEBUG:
-                    print("command: %s, source: %s, target: %s, arguments: %s") % (
-                        command, prefix, target, arguments)
+                    print("command: {0}, source: {1}, target: {2}, arguments: {3}").format(command, prefix, target, arguments))
                 self._handle_event(Event(command, prefix, target, arguments))
 
     def _handle_event(self, event):
@@ -636,11 +633,11 @@ class ServerConnection(Connection):
     def ctcp(self, ctcptype, target, parameter=""):
         """Send a CTCP command."""
         ctcptype = ctcptype.upper()
-        self.privmsg(target, "\001%s%s\001" % (ctcptype, parameter and (" " + parameter) or ""))
+        self.privmsg(target, "\001{0}{1}\001".format(ctcptype, parameter and (" " + parameter) or ""))
 
     def ctcp_reply(self, target, parameter):
         """Send a CTCP REPLY command."""
-        self.notice(target, "\001%s\001" % parameter)
+        self.notice(target, "\001{0}\001".format(parameter))
 
     def disconnect(self, message=""):
         """Hang up the connection.
@@ -686,11 +683,11 @@ class ServerConnection(Connection):
 
     def join(self, channel, key=""):
         """Send a JOIN command."""
-        self.send_raw("JOIN %s%s" % (channel, (key and (" " + key))))
+        self.send_raw("JOIN {0}{1}".format(channel, (key and (" " + key))))
 
     def kick(self, channel, nick, comment=""):
         """Send a KICK command."""
-        self.send_raw("KICK %s %s%s" % (channel, nick, (comment and (" :" + comment))))
+        self.send_raw("KICK {0} {1}{2}".format(channel, nick, (comment and (" :" + comment))))
 
     def links(self, remote_server="", server_mask=""):
         """Send a LINKS command."""
@@ -716,7 +713,7 @@ class ServerConnection(Connection):
 
     def mode(self, target, command):
         """Send a MODE command."""
-        self.send_raw("MODE %s %s" % (target, command))
+        self.send_raw("MODE {0} {1}".format(target, command))
 
     def motd(self, server=""):
         """Send an MOTD command."""
@@ -733,11 +730,11 @@ class ServerConnection(Connection):
     def notice(self, target, text):
         """Send a NOTICE command."""
         # Should limit len(text) here!
-        self.send_raw("NOTICE %s :%s" % (target, text))
+        self.send_raw("NOTICE {0} :{1}".format(target, text))
 
     def oper(self, nick, password):
         """Send an OPER command."""
-        self.send_raw("OPER %s %s" % (nick, password))
+        self.send_raw("OPER {0} {1}".format(nick, password))
 
     def part(self, channels, message=""):
         """Send a PART command."""
@@ -752,21 +749,21 @@ class ServerConnection(Connection):
 
     def ping(self, target, target2=""):
         """Send a PING command."""
-        self.send_raw("PING %s%s" % (target, target2 and (" " + target2)))
+        self.send_raw("PING {0}{1}".format(target, target2 and (" " + target2)))
 
     def pong(self, target, target2=""):
         """Send a PONG command."""
-        self.send_raw("PONG %s%s" % (target, target2 and (" " + target2)))
+        self.send_raw("PONG {0}{1}".format(target, target2 and (" " + target2)))
 
     def privmsg(self, target, text):
         """Send a PRIVMSG command."""
         # Should limit len(text) here!
-        self.send_raw("PRIVMSG %s :%s" % (target, text))
+        self.send_raw("PRIVMSG {0} :{1}".format(target, text))
 
     def privmsg_many(self, targets, text):
         """Send a PRIVMSG command to multiple targets."""
         # Should limit len(text) here!
-        self.send_raw("PRIVMSG %s :%s" % (",".join(targets), text))
+        self.send_raw("PRIVMSG {0} :{1}".format(",".join(targets), text))
 
     def quit(self, message=""):
         """Send a QUIT command."""
@@ -794,11 +791,11 @@ class ServerConnection(Connection):
 
     def squit(self, server, comment=""):
         """Send an SQUIT command."""
-        self.send_raw("SQUIT %s%s" % (server, comment and (" :" + comment)))
+        self.send_raw("SQUIT {0}{1}".format(server, comment and (" :" + comment)))
 
     def stats(self, statstype, server=""):
         """Send a STATS command."""
-        self.send_raw("STATS %s%s" % (statstype, server and (" " + server)))
+        self.send_raw("STATS {0}{1}".format(statstype, server and (" " + server)))
 
     def time(self, server=""):
         """Send a TIME command."""
@@ -809,7 +806,7 @@ class ServerConnection(Connection):
         if new_topic is None:
             self.send_raw("TOPIC " + channel)
         else:
-            self.send_raw("TOPIC %s :%s" % (channel, new_topic))
+            self.send_raw("TOPIC {0} :{1}".format(channel, new_topic))
 
     def trace(self, target=""):
         """Send a TRACE command."""
@@ -817,7 +814,7 @@ class ServerConnection(Connection):
 
     def user(self, username, realname):
         """Send a USER command."""
-        self.send_raw("USER %s 0 * :%s" % (username, realname))
+        self.send_raw("USER {0} 0 * :{1}".format(username, realname))
 
     def userhost(self, nicks):
         """Send a USERHOST command."""
@@ -837,7 +834,7 @@ class ServerConnection(Connection):
 
     def who(self, target="", op=""):
         """Send a WHO command."""
-        self.send_raw("WHO%s%s" % (target and (" " + target), op and (" o")))
+        self.send_raw("WHO{0}{1}".format(target and (" " + target), op and (" o")))
 
     def whois(self, targets):
         """Send a WHOIS command."""
@@ -845,9 +842,7 @@ class ServerConnection(Connection):
 
     def whowas(self, nick, max="", server=""):
         """Send a WHOWAS command."""
-        self.send_raw("WHOWAS %s%s%s" % (nick,
-                                         max and (" " + max),
-                                         server and (" " + server)))
+        self.send_raw("WHOWAS {0}{1}{2}".format(nick, max and (" " + max), server and (" " + server)))
 
 class DCCConnectionError(IRCError):
     pass
@@ -887,7 +882,7 @@ class DCCConnection(Connection):
         try:
             self.socket.connect((self.peeraddress, self.peerport))
         except socket.error as x:
-            raise DCCConnectionError("Couldn't connect to socket: %s" % x)
+            raise DCCConnectionError("Couldn't connect to socket: {0}".format(x))
         self.connected = 1
         if self.irclibobj.fn_to_add_socket:
             self.irclibobj.fn_to_add_socket(self.socket)
@@ -912,7 +907,7 @@ class DCCConnection(Connection):
             self.localaddress, self.localport = self.socket.getsockname()
             self.socket.listen(10)
         except socket.error as x:
-            raise DCCConnectionError("Couldn't bind socket: %s" % x)
+            raise DCCConnectionError("Couldn't bind socket: {0}".format(x))
         return self
 
     def disconnect(self, message=""):
@@ -945,8 +940,7 @@ class DCCConnection(Connection):
             self.socket = conn
             self.connected = 1
             if DEBUG:
-                print("DCC connection from %s:%d" % (
-                    self.peeraddress, self.peerport))
+                print("DCC connection from {0}:{1}".format(self.peeraddress, self.peerport))
             self.irclibobj._handle_event(
                 self,
                 Event("dcc_connect", self.peeraddress, None, None))
@@ -986,8 +980,7 @@ class DCCConnection(Connection):
                 print("FROM PEER:", chunk)
             arguments = [chunk]
             if DEBUG:
-                print("command: %s, source: %s, target: %s, arguments: %s" % (
-                    command, prefix, target, arguments))
+                print("command: {0}, source: {1}, target: {2}, arguments: {3}".format(command, prefix, target, arguments))
             self.irclibobj._handle_event(
                 self,
                 Event(command, prefix, target, arguments))
@@ -1007,7 +1000,7 @@ class DCCConnection(Connection):
             if self.dcctype == "chat":
                 self.socket.send(bytes("\n", 'UTF-8'))
             if DEBUG:
-                print("TO PEER: %s\n" % string)
+                print("TO PEER: {0}\n".format(string))
         except socket.error as x:
             # Ouch!
             self.disconnect("Connection reset by peer.")
