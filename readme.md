@@ -13,8 +13,13 @@ This is a work in progress port from Python 2 to Python 3.
 
 ## Development
 
-It imports! Syntactically, to the interpreter, it looks fine. So far, I've fix the handling and raising of exceptions to be Python 3 compatible, as well as encoding strings to UTF-8.
-What actually works? Who knows -- hopefully it won't take too long before things start coming together smoothly. 
+So far, I've:
+
+* fixed the handling and raising of exceptions
+* encoded strings to UTF-8 bytes
+* switched to new string format syntax
+
+What actually works? Who knows! It does bind to a socket, however I don't think it ping/pongs correctly to get you into most servers just yet... I'm focusing on a cleaning some things up to Python 3 before guaranteeing functionality.
 
 ## This project sucks!
 
