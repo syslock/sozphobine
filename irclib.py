@@ -422,6 +422,7 @@ class ServerConnection(Connection):
         self.localaddress = localaddress
         self.localport = localport
         self.localhost = socket.gethostname()
+        self.textencoding = "UTF-8"
         if ipv6:
             self.socket = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
         else:
@@ -771,7 +772,7 @@ class ServerConnection(Connection):
         # unless you've been connected for at least 5 minutes!
         self.send_raw("QUIT" + (message and (" :" + message)))
 
-    def send_raw(self, string):
+    def send_raw(self, string, encoding=""):
         """Send raw string to the server.
 
         The string will be padded with appropriate CR LF.
@@ -783,7 +784,10 @@ class ServerConnection(Connection):
                 self.ssl.write(string + "\r\n")
             else:
                 cstring = string + "\r\n"
-                self.socket.send(cstring.encode('UTF-8'))
+                if encoding == "":
+                  self.socket.send(cstring.encode(self.textencoding))
+                else:
+                  self.socket.send(cstring.encode(encoding))
             if DEBUG:
                 print("TO SERVER:", string)
         except socket.error as x:
@@ -990,16 +994,22 @@ class DCCConnection(Connection):
         """[Internal]"""
         return self.socket
 
-    def privmsg(self, string):
+    def privmsg(self, string, encoding=""):
         """Send data to DCC peer.
 
         The string will be padded with appropriate LF if it's a DCC
         CHAT session.
         """
         try:
-            self.socket.send(string.encode('UTF-8'))
+            if encoding == "":
+              self.socket.send(string.encode(self.textencoding))
+            else:
+              self.socket.send(string.encode(encoding))
             if self.dcctype == "chat":
-                self.socket.send("\n".encode('UTF-8'))
+              if encoding == "":
+                self.socket.send("\n".encode(self.textencoding))
+              else:
+                self.socket.send("\n".encode(encoding))
             if DEBUG:
                 print("TO PEER: {0}\n".format(string))
         except socket.error as x:
