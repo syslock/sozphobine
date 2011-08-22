@@ -10,13 +10,15 @@ In order to understand how to make an IRC client, I'm afraid you more
 or less must understand the IRC specifications.  They are available
 [here](http://www.irchelp.org/irchelp/rfc/).
 
-This is a work in progress port from Python 2 to Python 3.
+This is a port from Python 2 to Python 3 forked from irclib 0.4.8.
 
 ## Development
 
 * fixed the handling and raising of exceptions
-* encoded strings to UTF-8
+* fixed print functions
+* messages default to UTF-8, but can be changed to whatever
 * switched to new string.format() syntax
+
 
 ## I WANT YOU
 
