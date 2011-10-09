@@ -247,8 +247,15 @@ def fun_relax( plugin, connection, channel, source_nick, victim ):
 
 
 def fun_roll( plugin, connection, channel, source_nick, victim ):
-	connection.action( channel, "hätte auch irgendwie Lust auf frische Brötchen." )
-
+	if random.randint(0,20)>2:
+		a = random.randint(1,6)
+		b = random.randint(1,6)
+		_sum = a + b
+		connection.action( channel, "lässt die Würfel für %(source_nick)s sprechen (2d6): %(a)d und %(b)d = %(_sum)d" % locals() )
+	elif random.randint(0,3)>1:
+		connection.action( channel, "*lol*  Jaja... roll du nur mal..." )
+	else:
+		connection.action( channel, "hat auch irgendwie Lust auf frische Brötchen." )
 
 def fun_smoke( plugin, connection, channel, source_nick, victim ):
 	connection.action( channel, "lässt das diodenbeleuchtete Nichtraucherschild aufleuchten und schaut grimmig." )
