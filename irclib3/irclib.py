@@ -377,7 +377,8 @@ class ServerConnection(Connection):
         self.ssl = None
 
     def connect(self, server, port, nickname, password=None, username=None,
-                ircname=None, localaddress="", localport=0, ssl=False, ipv6=False):
+                ircname=None, localaddress="", localport=0, ssl=False, ipv6=False,
+                decoders=["utf-8","iso-8859-15","cp1252","ascii"]):
         """Connect/reconnect to a server.
 
         Arguments:
@@ -401,6 +402,8 @@ class ServerConnection(Connection):
             ssl -- Enable support for ssl.
 
             ipv6 -- Enable support for ipv6.
+            
+            decoders -- A list of character encodings used for decoding in list order.
 
         This function can be called to reconnect a closed connection.
 
@@ -423,6 +426,7 @@ class ServerConnection(Connection):
         self.localport = localport
         self.localhost = socket.gethostname()
         self.textencoding = "UTF-8"
+        self.decoders = decoders
         if ipv6:
             self.socket = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
         else:
@@ -498,7 +502,13 @@ class ServerConnection(Connection):
             # Read nothing: connection must be down.
             self.disconnect("Connection reset by peer")
             return
-
+        
+        for decoder in self.decoders:
+            try:
+                new_data = new_data.decode( decoder )
+                break
+            except UnicodeDecodeError as e:
+                continue
         lines = _linesep_regexp.split(self.previous_buffer + new_data)
 
         # Save the last, unfinished line.
@@ -560,7 +570,7 @@ class ServerConnection(Connection):
                         command = "privnotice"
 
                 for m in messages:
-                    if type(m) is types.TupleType:
+                    if type(m) is tuple:
                         if command in ["privmsg", "pubmsg"]:
                             command = "ctcp"
                         else:
@@ -739,7 +749,7 @@ class ServerConnection(Connection):
 
     def part(self, channels, message=""):
         """Send a PART command."""
-        if type(channels) == types.StringType:
+        if type(channels) == str:
             self.send_raw("PART " + channels + (message and (" " + message)))
         else:
             self.send_raw("PART " + ",".join(channels) + (message and (" " + message)))
