@@ -275,6 +275,10 @@ def fun_seen( plugin, connection, channel, source_nick, victim ):
 	connection.action( channel, "findet, dass es in Mecklenburg-Vorpommern schöne Seen gibt, weiß aber nicht was %(victim)s davon hält." % locals() )
 
 
+def fun_code( plugin, connection, channel, source_nick, victim ):
+	connection.privmsg( channel, "https://github.com/syslock/sozphobine" % locals() )
+
+
 WEICHEI_LINES = []
 def fun_weichei( plugin, connection, channel, source_nick, victim ):
 	global WEICHEI_LINES
