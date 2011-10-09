@@ -1,0 +1,51 @@
+## phrasefile for MoxQuizz
+##
+## german phrases to print on fun cmd !phrase
+##
+## $Id: phrases.txt 791 2004-04-12 19:48:41Z moxon $
+
+Viel Spaß!
+
+Vergiss nicht zu spülen!
+
+Mach die Tür hinter dir zu!
+
+Bitte hinterher lüften!
+
+Das wollten wir eigentlich garnicht wissen...
+
+Und wehe wir müssen Geräusche hören!
+
+Pullerst du im Sitzen oder im Stehen?
+
+Händewaschen nicht vergessen!
+
+Rette den Regenwald, nimm Recyclingklopapier!
+
+Wie oft faltest du eigentlich dein Papier?
+
+Und mach dann bitte die Schleifspuren weg!
+
+Hast du eigentlich einen Plüschbezug auf dem Klodeckel?
+
+Groß oder klein?
+
+Denk an die Kurzspültaste!
+
+Nimm dir was zu lesen mit!
+
+Nimm dir was zu essen mit!
+
+http://www.eigenurin.de/
+
+Mach Fotos und stell sie bei http://flickr.com/ rein...
+
+Hast du da 'ne Webcam?
+
+Aber spiel nicht an dir rum!
+
+Denk dran: mehr als drei mal schütteln ist wichsen!
+
+Hey, lass den Playboy hier liegen!
+
+Gibt es anatomisch angepasste Klobrillen?
