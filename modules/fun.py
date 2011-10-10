@@ -1,5 +1,5 @@
 import re, random, time
-from bot import Timer
+from bot import Timer, is_on_channel, same_nick
 
 
 last_action_time = 0
@@ -12,16 +12,6 @@ def approve_action():
 	else:
 		last_action_time = time.time()
 		return True
-
-
-def is_on_channel( plugin, connection, channel, nick ):
-	return "monitor" not in plugin.bot.plugins \
-			or channel in plugin.bot.plugins["monitor"].module\
-				.get_channels_by_con_and_nick( connection, nick )
-
-
-def same_nick( nick1, nick2 ):
-	return nick1.strip().lower()==nick2.strip().lower()
 
 
 def fun_amok( plugin, connection, channel, source_nick, victim ):
@@ -272,12 +262,6 @@ def fun_steal( plugin, connection, channel, source_nick, victim ):
 
 def fun_strike( plugin, connection, channel, source_nick, victim ):
 	connection.action( channel, "hat keine Angst vor Terroristen." )
-
-
-def fun_seen( plugin, connection, channel, source_nick, victim ):
-	if not victim:
-		victim = source_nick
-	connection.action( channel, "findet, dass es in Mecklenburg-Vorpommern schöne Seen gibt, weiß aber nicht was %(victim)s davon hält." % locals() )
 
 
 def fun_code( plugin, connection, channel, source_nick, victim ):
