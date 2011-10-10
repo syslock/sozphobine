@@ -3,7 +3,7 @@ import re, random
 class User:
 	def __init__( self, full_name ):
 		parts = full_name.split("!")
-		self.nick = parts[0]
+		self.nick = parts[0].strip().lower()
 		if len(parts)>1:
 			self.mask = parts[1]
 		else:
@@ -42,13 +42,13 @@ def handle_event( plugin, connection, event ):
 	if event.eventtype() == "join":
 		# joinende Nutzer hinzufügen:
 		channels_by_con_and_name[ connection ][ channel_name ].add_user( user )
-		if user.nick == connection.get_nickname():
+		if user.nick == connection.get_nickname().strip().lower():
 			# Wenn Bot selber joint, Namensliste für Channel abfragen:
 			connection.names( [channel_name] )
 	elif event.eventtype() == "part":
 		# partende Nutzer löschen:
 		channels_by_con_and_name[ connection ][ channel_name ].del_user( user )
-		if user.nick == connection.get_nickname():
+		if user.nick == connection.get_nickname().strip().lower():
 			# Wenn Bot selber partet, Channel entfernen:
 			del channels_by_con_and_name[ connection ][ channel_name ]
 		
@@ -90,7 +90,7 @@ def get_channels_by_con_and_nick( connection, nick ):
 	channel_names = []
 	if connection in channels_by_con_and_name:
 		for channel in channels_by_con_and_name[ connection ].values():
-			if nick in channel.users:
+			if nick.strip().lower() in channel.users:
 				channel_names.append( channel.name )
 	return channel_names
 

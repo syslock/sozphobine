@@ -20,6 +20,10 @@ def is_on_channel( plugin, connection, channel, nick ):
 				.get_channels_by_con_and_nick( connection, nick )
 
 
+def same_nick( nick1, nick2 ):
+	return nick1.strip().lower()==nick2.strip().lower()
+
+
 def fun_amok( plugin, connection, channel, source_nick, victim ):
 	if victim:
 		if is_on_channel( plugin, connection, channel, victim ):
@@ -46,9 +50,9 @@ def fun_assimilate( plugin, connection, channel, source_nick, victim ):
 		connection.privmsg( channel, "Resistance wasn't futile!" )
 	else:
 		if victim:
-			if victim==source_nick:
+			if same_nick( victim, source_nick ):
 				txt = "sees: %(source_nick)s, you can't assimilate yourself.  Think about it!"
-			if victim==connection.get_nickname():
+			if same_nick( victim, connection.get_nickname() ):
 				txt = "gets assimilated by %(source_nick)s.  Watch out!"
 			elif is_on_channel( plugin, connection, channel, victim ):
 				txt = "sees: %(source_nick)s assimilates %(victim)s.  Resistance is futile!"
@@ -69,10 +73,10 @@ def fun_blush( plugin, connection, channel, source_nick, victim ):
 		"%(source_nick)s ist total süss, wenn verschämt!",
 		"%(source_nick)s wird rot. Ein sehr kräftiges bis kaminrotes Rot-Rot.",
 	]
-	if victim==connection.get_nickname():
+	if same_nick( victim, connection.get_nickname() ):
 		txt = random.choice( what )
 		source_nick = ""
-	elif victim and victim!=source_nick \
+	elif victim and not same_nick( victim, source_nick ) \
 			and is_on_channel( plugin, connection, channel, victim ):
 		txt = "sieht: %(source_nick)s bringt %(victim)s zum erröten."
 	else:
@@ -102,7 +106,8 @@ def fun_hartei( plugin, connection, channel, source_nick, victim ):
 	if not HARTEI_LINES:
 		HARTEI_LINES = load_lines_from_file( "harteier.txt" )
 	if victim:
-		if victim==connection.get_nickname() and random.randint(0,10)>4:
+		if same_nick( victim, connection.get_nickname() ) \
+				and random.randint(0,10)>4:
 			txt = "grinst blöd und hält dich fürn glatten"
 		elif is_on_channel( plugin, connection, channel, victim ):
 			txt = "sieht: %(source_nick)s nennt %(victim)s nen"
@@ -123,7 +128,7 @@ def fun_hug( plugin, connection, channel, source_nick, victim ):
 	howtos = ["umarmt", "knuddelt", "streichelt", "hätschelt"]
 	howto = random.choice( howtos )
 	success = True
-	if source_nick==victim:
+	if same_nick( source_nick, victim ):
 		txt = "sieht, dass %(source_nick)s sich selbst ganz doll lieb hat."
 		success = False
 	elif not victim:
@@ -178,7 +183,7 @@ def fun_klo( plugin, connection, channel, source_nick, victim ):
 	if not KLO_LINES:
 		KLO_LINES = load_lines_from_file( "klo.txt" )
 	if victim and victim!=source_nick:
-		if victim==connection.get_nickname():
+		if same_nick( victim, connection.get_nickname() ):
 			txt = "sagt: Ich muss nicht auf's Klo, aber wenn du gehst:"
 		elif is_on_channel( plugin, connection, channel, victim ):
 			txt = "sieht: %(source_nick)s ruft %(victim)s hinterher:"
@@ -285,7 +290,8 @@ def fun_weichei( plugin, connection, channel, source_nick, victim ):
 	if not WEICHEI_LINES:
 		WEICHEI_LINES = load_lines_from_file( "weicheier.txt" )
 	if victim:
-		if victim==connection.get_nickname() and random.randint(0,10)>4:
+		if same_nick( victim, connection.get_nickname() ) \
+				and random.randint(0,10)>4:
 			txt = "lächelt mild und hält dich fürn"
 		elif is_on_channel( plugin, connection, channel, victim ):
 			txt = "sieht: %(source_nick)s nennt %(victim)s nen"
@@ -310,6 +316,7 @@ def handle_event( plugin, connection, event ):
 		result = re.findall( "^!(\S+)\s*(.*)$", args[0] )
 		if result:
 			command, cargs = result[0]
+			cargs = cargs.strip()
 			if "fun_"+command in globals() and approve_action():
 				globals()["fun_"+command]( plugin, connection, channel, source_nick, cargs )
 
