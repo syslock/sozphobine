@@ -2,6 +2,17 @@ import time, imp
 from irclib3 import irclib
 
 
+def is_on_channel( plugin, connection, channel, nick ):
+	return "monitor" not in plugin.bot.plugins \
+			or channel in plugin.bot.plugins["monitor"].module\
+				.get_channels_by_con_and_nick( connection, nick )
+
+
+def same_nick( nick1, nick2 ):
+	return nick1.strip().lower()==nick2.strip().lower()
+
+
+
 class Timer:
 	def __init__( self, delay, callback, callargs, loop=False ):
 		self.time = time.time()
@@ -31,6 +42,8 @@ class Plugin:
 				self.module.init( self )
 			except Exception as e:
 				print( "FAIL: Initialisierung von %s: %s" %(self.name,str(e)) )
+				if hasattr(self.module,"DEBUG") and self.module.DEBUG:
+					raise
 	def reload( self ):
 		self.unsubscribe_events()
 		self.module = imp.reload( self.module )
@@ -41,7 +54,10 @@ class Plugin:
 				self.handlers[event.eventtype()]( self, con, event )
 			except Exception as e:
 				print( "FAIL: Eventbehandlung in %s: %s" % (self.name,str(e)) )
-				self.reload()
+				if hasattr(self.module,"DEBUG") and self.module.DEBUG:
+					raise
+				else:
+					self.reload()
 		else:
 			print( "WARN: Unhandled event %s in Plugin %s" % (event.eventtype(), self.name) )
 	def subscribe_events( self ):
@@ -62,6 +78,10 @@ class Plugin:
 				ready = timer.process_once( self )
 			except Exception as e:
 				print( "FAIL: Zeitereignis in %s: %s" % (self.name,str(e)) )
+				if hasattr(self.module,"DEBUG") and self.module.DEBUG:
+					raise
+				else:
+					self.reload()
 			if not ready:
 				new_timers.append( timer )
 		self.timers = new_timers
@@ -70,7 +90,10 @@ class Plugin:
 				self.module.process_once( self )
 			except Exception as e:
 				print( "FAIL: Hintergrundprozess in %s: %s" % (self.name,str(e)) )
-				self.reload()
+				if hasattr(self.module,"DEBUG") and self.module.DEBUG:
+					raise
+				else:
+					self.reload()
 
 
 class Bot:
