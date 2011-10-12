@@ -63,9 +63,10 @@ class Plugin:
 	def subscribe_events( self ):
 		self.handlers = {}
 		for event_key in self.module.HANDLERS:
-			self.bot.irc.add_global_handler( event_key, self.__handle_event__, priority=self.bot.plugin_load_count )
+			self.bot.irc.add_global_handler( event_key, self.__handle_event__, priority=self.bot.next_handler_priority )
 			function = self.module.HANDLERS[event_key]
 			self.handlers[ event_key ] = function
+		self.bot.next_handler_priority += 1
 	def unsubscribe_events( self ):
 		self.handlers = {}
 		for event_key in self.module.HANDLERS:
@@ -106,7 +107,7 @@ class Bot:
 		self.connection = self.irc.server()
 		self.connection.connect( self.host, self.port, self.nick )
 		self.plugins = {}
-		self.plugin_load_count = 0
+		self.next_handler_priority = 0
 		time.sleep(5)
 	def run( self ):
 		while True:
@@ -116,7 +117,6 @@ class Bot:
 			time.sleep(0.1)
 	def load_plugin( self, name ):
 		if name not in self.plugins:
-			self.plugin_load_count += 1
 			self.plugins[ name ] = Plugin( name, bot=self )
 	def unload_plugin( self, name ):
 		if name in self.plugins:
@@ -124,7 +124,6 @@ class Bot:
 			del self.plugins[ name ]
 	def reload_plugin( self, name ):
 		if name in self.plugins:
-			self.plugin_load_count += 1
 			self.plugins[ name ].reload()
 		else:
 			self.load_plugin( name )

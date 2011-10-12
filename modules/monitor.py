@@ -34,9 +34,10 @@ def register_channel( connection, channel_name ):
 		channel = Channel( connection, channel_name )
 		channels_by_con_and_name[ connection ][ channel.name ] = channel
 
-def handle_event( plugin, connection, event ):
+def handle_joinpart( plugin, connection, event ):
 	channel_name = event.target()
-	register_channel( connection, channel_name )
+	if channel_name: # quit hat keinen channel_name
+		register_channel( connection, channel_name )
 	user_full_name = event.source()
 	user = User( user_full_name )
 	if event.eventtype() == "join":
@@ -51,6 +52,14 @@ def handle_event( plugin, connection, event ):
 		if user.nick == connection.get_nickname().strip().lower():
 			# Wenn Bot selber partet, Channel entfernen:
 			del channels_by_con_and_name[ connection ][ channel_name ]
+	elif event.eventtype() == "quit":
+		if user.nick == connection.get_nickname().strip().lower():
+			# Wenn Bot selber quittet, alle zugehörigen Channels entfernen:
+			del channels_by_con_and_name[ connection ]
+		else:
+			# Sonst Nutzer aus allen Channels der Connection bereinigen:
+			for channel in channels_by_con_and_name[ connection ].values():
+				channel.del_user( user )
 		
 def handle_namreply( plugin, connection, event ):
 	args = event.arguments()
@@ -96,8 +105,9 @@ def get_channels_by_con_and_nick( connection, nick ):
 
 HANDLERS = {
 	"namreply" : handle_namreply,
-	"join" : handle_event,
-	"part" : handle_event,
+	"join" : handle_joinpart,
+	"part" : handle_joinpart,
+	"quit" : handle_joinpart,
 	"nick" : handle_nick_change,
 }
 

@@ -107,16 +107,18 @@ def seen_seen( plugin, connection, channel, source_nick, nick ):
 			_time = time.strftime( '%d.%m.%Y %H:%M:%S',time.localtime( _time ) )
 			txt = "hat %(_nick)s zuletzt am %(_time)s gesehen, als sie oder er"
 			if _eventtype=="join":
-				txt += " den Raum betrat."
+				txt += " den Raum betrat"
 			elif _eventtype=="part":
-				txt += " den Raum verließ."
+				txt += " den Raum verließ"
 			elif _eventtype=="nick":
 				txt += " den Namen änderte"
-				if _msg:
-					txt += " (%(_msg)s)"
-				txt += "."
 			elif _eventtype=="namreply":
-				txt += " hier herumstromerte."
+				txt += " hier herumstromerte"
+			elif _eventtype=="quit":
+				txt += " die Verbindung verlor"
+			if _msg:
+				txt += " (%(_msg)s)"
+			txt += "."
 			connection.action( channel, txt % locals() )
 		con.commit()
 		c.close()
@@ -141,14 +143,30 @@ def handle_msg( plugin, connection, event ):
 
 def handle_joinpart( plugin, connection, event ):
 	channel_name = event.target()
+	channel_names = []
+	if channel_name: # part/join
+		channel_names.append( channel_name )
+	else: #quit
+		if "monitor" in plugin.bot.plugins:
+			monitor = plugin.bot.plugins["monitor"].module
+			for channel_name in monitor.channels_by_con_and_name[ connection ]:
+				channel_names.append( channel_name )
+		else:
+			channel_names.append( str(None) )
 	user_full_name = event.source()
 	user = User( user_full_name )
+	msg = event.arguments()
+	if msg:
+		msg = msg[0].strip()
+	else:
+		msg = ""
 	con = get_connection()
 	c = con.cursor()
-	c.execute( """insert into seen (time,nick,channel,server,eventtype,msg)
-		 values(?,?,?,?,?,?)""", 
-		 (time.time(), user.nick, channel_name, connection.server, 
-		 	event.eventtype(), "") )
+	for channel_name in channel_names:
+		c.execute( """insert into seen (time,nick,channel,server,eventtype,msg)
+			 values(?,?,?,?,?,?)""", 
+			 (time.time(), user.nick, channel_name, connection.server, 
+			 	event.eventtype(), msg) )
 	con.commit()
 	c.close()
 
@@ -213,6 +231,7 @@ HANDLERS = {
 	"namreply" : handle_namreply,
 	"join" : handle_joinpart,
 	"part" : handle_joinpart,
+	"quit" : handle_joinpart,
 	"nick" : handle_nick_change,
 }
 
