@@ -48,6 +48,14 @@ class Plugin:
 		self.unsubscribe_events()
 		self.module = imp.reload( self.module )
 		self.subscribe_events()
+	def reinit( self ):
+		if "reinit" in dir(self.module):
+			try:
+				self.module.reinit( self )
+			except Exception as e:
+				print( "FAIL: Reinitialisierung von %s: %s" %(self.name,str(e)) )
+				if hasattr(self.module,"DEBUG") and self.module.DEBUG:
+					raise
 	def __handle_event__( self, con, event ):
 		if event.eventtype() in self.handlers:
 			try:
@@ -108,13 +116,32 @@ class Bot:
 		self.connection.connect( self.host, self.port, self.nick )
 		self.plugins = {}
 		self.next_handler_priority = 0
-		time.sleep(5)
+		time.sleep(5) # FIXME: Timer?
 	def run( self ):
 		while True:
 			self.irc.process_once()
 			for plugin in self.plugins.values():
 				plugin.process_once()
 			time.sleep(0.1)
+	def reconnect( self, join_channels=[], msg="reconnect" ):
+		if self.connection and self.connection.connected:
+			self.connection.disconnect( msg )
+		# Versuche Verbindung ohne Invalidisierung verstreuter Connection-
+		# Referenzen wiederherzustellen:
+		time.sleep(5) # FIXME: Timer?
+		self.connection.connect( self.host, self.port, self.nick )
+		# FIXME: Falls das innerhalb kurzer Zeit zu einem neuen Fehler führt
+		# müssten wir wohl ein neues IRC-Objekt anlegen. Hierbei würden z.B.
+		# folgende Connection-Referenzen invalidisiert werden:
+		# - Eintrag in monitor.channels_by_con_and_name, der allerdings durch
+		#   das disconnect-Event bereits entfernt worden sein sollte
+		# - Argument einiger Timer-Instanzen in fun und nickserv 
+		# - Eigenschaft von Quiz-Instanzen in quiz
+		time.sleep(5) # FIXME: Timer?
+		for channel in join_channels:
+			self.connection.join( channel )
+		for name in self.plugins:
+			self.plugins[ name ].reinit()
 	def load_plugin( self, name ):
 		if name not in self.plugins:
 			self.plugins[ name ] = Plugin( name, bot=self )

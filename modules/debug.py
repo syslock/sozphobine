@@ -38,6 +38,8 @@ def handle_event( plugin, connection, event ):
 					setattr( plugin.bot.plugins[cargs[0]].module, cargs[2], eval(cargs[3]) )
 				except Exception as e:
 					connection.privmsg( source_nick, str(e) )
+		if command=="disconnect":
+			connection.disconnect( "requested" )
 
 HANDLERS = {
 	"privmsg" : handle_event,

@@ -103,11 +103,31 @@ def get_channels_by_con_and_nick( connection, nick ):
 				channel_names.append( channel.name )
 	return channel_names
 
+def handle_error( plugin, connection, event ):
+	print( "in handle_error" )
+	if "closing link" in event.target().lower():
+		print( "in closing link" )
+		# FIXME: Wird hierbei nicht die TCP-Session terminiert?
+		#	Wieso generiert irclib dabei KEINEN disconnect-Event?
+		handle_disconnect( plugin, connection, event )
+
+def handle_disconnect( plugin, connection, event ):
+	print( "in handle_disconnect" )
+	channel_names = []
+	if connection in channels_by_con_and_name:
+		print( "connection in channels_by_con_and_name" )
+		channel_names = [k for k in channels_by_con_and_name[ connection ].keys()]
+		del channels_by_con_and_name[ connection ]
+	# Mit Join-Liste der aktuellen Channel-Namen neu verbinden:
+	plugin.bot.reconnect( channel_names )
+
 HANDLERS = {
 	"namreply" : handle_namreply,
 	"join" : handle_joinpart,
 	"part" : handle_joinpart,
 	"quit" : handle_joinpart,
 	"nick" : handle_nick_change,
+	"error" : handle_error,
+	"disconnect" : handle_disconnect,
 }
 

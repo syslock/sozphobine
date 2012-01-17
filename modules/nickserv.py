@@ -8,9 +8,12 @@ NICKSERV_ACCOUNTS = {}
 control_timer = None
 def init( plugin ):
 	global control_timer
-	control_timer =  Timer( 5, check_nickserv_status, (plugin,), loop=True )
-	plugin.timers.append( control_timer )
+	if control_timer not in plugin.timers:
+		control_timer =  Timer( 5, check_nickserv_status, (plugin,), loop=True )
+		plugin.timers.append( control_timer )
 
+def reinit( plugin ):
+	init( plugin )
 
 def check_nickserv_status( plugin ):
 	if plugin.bot.connection.get_nickname()!=plugin.bot.nick:
@@ -36,6 +39,8 @@ def handle_notice( plugin, connection, event ):
 				plugin.timers.append( password_timer )
 			elif control_timer:
 				control_timer.loop = False
+		elif args and args[0]=="Your nick isn't registered.":
+			control_timer.loop = False
 
 HANDLERS = { "privnotice" : handle_notice }
 
