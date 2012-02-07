@@ -116,6 +116,7 @@ class Bot:
 		self.connection.connect( self.host, self.port, self.nick )
 		self.plugins = {}
 		self.next_handler_priority = 0
+		self.auto_rejoin_channels = set()
 		time.sleep(5) # FIXME: Timer?
 	def run( self ):
 		while True:
@@ -123,7 +124,7 @@ class Bot:
 			for plugin in self.plugins.values():
 				plugin.process_once()
 			time.sleep(0.1)
-	def reconnect( self, join_channels=[], msg="reconnect" ):
+	def reconnect( self, msg="reconnect" ):
 		if self.connection and self.connection.connected:
 			self.connection.disconnect( msg )
 		# Versuche Verbindung ohne Invalidisierung verstreuter Connection-
@@ -138,7 +139,7 @@ class Bot:
 		# - Argument einiger Timer-Instanzen in fun und nickserv 
 		# - Eigenschaft von Quiz-Instanzen in quiz
 		time.sleep(5) # FIXME: Timer?
-		for channel in join_channels:
+		for channel in self.auto_rejoin_channels:
 			self.connection.join( channel )
 		for name in self.plugins:
 			self.plugins[ name ].reinit()
@@ -154,4 +155,8 @@ class Bot:
 			self.plugins[ name ].reload()
 		else:
 			self.load_plugin( name )
+	def join( self, channel_name, auto_rejoin=True ):
+		if auto_rejoin:
+			self.auto_rejoin_channels.add( channel_name )
+		self.connection.join( channel_name )
 

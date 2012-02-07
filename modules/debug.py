@@ -40,6 +40,8 @@ def handle_event( plugin, connection, event ):
 					connection.privmsg( source_nick, str(e) )
 		if command=="disconnect":
 			connection.disconnect( "requested" )
+		if command=="quit":
+			connection.quit( "requested" )
 
 HANDLERS = {
 	"privmsg" : handle_event,
