@@ -12,7 +12,7 @@ def main():
 	#nickserv = bot.plugins["nickserv"].module
 	#nickserv.NICKSERV_ACCOUNTS[ ("irc.freenode.net","NickServ!NickServ@services.freenode.net") ] \
 	#	= ("mydemobot","74cOpEtGN8")
-	bot.connection.join( '#mytestchannel' )
+	bot.join( '#mytestchannel' )
 	bot.load_plugin( "quiz" )
 	quiz = bot.plugins["quiz"].module 
 	quiz.QUIZ_CHANNELS.append( "#mytestchannel" )
