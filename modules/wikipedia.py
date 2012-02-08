@@ -38,20 +38,35 @@ def wiki_wiki( plugin, connection, channel, source_nick, args ):
 	suggestion = None
 	try:
 		query = urllib.parse.urlencode( { "srsearch" : args } )
-		resp = urllib.request.urlopen( "http://de.wikipedia.org/w/api.php?format=xml&action=query&list=search&%(query)s&srprop=snippet&srlimit=1" % locals() )
+		resp = urllib.request.urlopen( "http://de.wikipedia.org/w/api.php?format=xml&action=query&list=search&%(query)s&srprop=snippet&srlimit=10" % locals() )
 		result = resp.readall().decode("utf-8")
 		tree = etree.parse( io.StringIO(result) )
-		hits = None
+		hits = 0
 		try:
-			hits = int(tree.xpath( "//searchinfo/@totalhits")[0] )
+			hits = int( tree.xpath("//searchinfo/@totalhits")[0] )
 		except Exception as e:
 			print( e )
 		try:
 			suggestion = tree.xpath( "//searchinfo/@suggestion" )[0]
 		except Exception as e:
 			print( e )
-		title = tree.xpath( "//search/p/@title" )[0]
-		snippet = tree.xpath( "//search/p/@snippet" )[0]
+		titles = tree.xpath( "//search/p/@title" )
+		snippets = tree.xpath( "//search/p/@snippet" )
+		if not titles:
+			raise Exception( "Kein Treffer in Wikisuche nach \"%(args)s\"" % locals() )
+		candidates = []
+		for i in range(len(titles)):
+			title = titles[i]
+			matching_words = 0
+			for word in args.lower().split():
+				if word in title.lower():
+					matching_words += 1
+			candidates.append( (-matching_words,len(title),i) )
+		choice = sorted( candidates )[0]
+		n = choice[2] # ID des besten Treffers
+		title = titles[n] # Titel des besten Treffers
+		snippet = snippets[n] # Snippet des besten Treffers
+		n += 1 # intuitive Zählung fängt bei 1 an
 		for key in SNIPPET_REPL:
 			snippet = snippet.replace( key, SNIPPET_REPL[key] )
 		query = urllib.parse.urlencode( { "titles" : title } )
@@ -70,7 +85,7 @@ def wiki_wiki( plugin, connection, channel, source_nick, args ):
 			touched = tree.xpath( "//page/@touched" )[0]
 		except Exception as e:
 			print( e )
-		connection.action( channel, "fand: %(title)s: %(snippet)s   [ %(url)s ]" % locals() )
+		connection.action( channel, "fand: %(title)s: %(snippet)s   [ %(url)s ]   (Treffer# %(n)d/%(hits)d)" % locals() )
 	except Exception as e:
 		print( e )
 		if suggestion:
