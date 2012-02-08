@@ -31,7 +31,6 @@ URL_REPL = {
 	")" : "%29",
 }
 
-DEBUG=True
 def wiki_wiki( plugin, connection, channel, source_nick, args ):
 	if not args:
 		connection.action( channel, "reagiert z.B. auf: !wiki suchbegriff   ODER   !wiki suchbegriff -ausschlusskriterium" )
