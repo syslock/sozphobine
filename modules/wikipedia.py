@@ -38,18 +38,22 @@ def wiki_wiki( plugin, connection, channel, source_nick, args ):
 	suggestion = None
 	try:
 		query = urllib.parse.urlencode( { "srsearch" : args } )
-		resp = urllib.request.urlopen( "http://de.wikipedia.org/w/api.php?format=xml&action=query&list=search&%(query)s&srprop=snippet&srlimit=10" % locals() )
+		resp = urllib.request.urlopen( "http://de.wikipedia.org/w/api.php?format=xml&action=query&list=search&%(query)s&srprop=snippet|redirecttitle&srlimit=10" % locals() )
 		result = resp.readall().decode("utf-8")
 		tree = etree.parse( io.StringIO(result) )
 		hits = 0
 		try:
 			hits = int( tree.xpath("//searchinfo/@totalhits")[0] )
 		except Exception as e:
-			print( e )
+			print( "Keine Trefferanzahl für \"%(args)s\"" % locals() )
 		try:
 			suggestion = tree.xpath( "//searchinfo/@suggestion" )[0]
+			print( "Suchvorschlag für \"%(args)s\": \"%(suggestion)s\"" % locals() )
+			if suggestion.lower()==args.lower():
+				print( "...ignoriere." )
+				suggestion = None
 		except Exception as e:
-			print( e )
+			pass
 		titles = tree.xpath( "//search/p/@title" )
 		snippets = tree.xpath( "//search/p/@snippet" )
 		if not titles:
@@ -57,15 +61,32 @@ def wiki_wiki( plugin, connection, channel, source_nick, args ):
 		candidates = []
 		for i in range(len(titles)):
 			title = titles[i]
-			matching_words = 0
+			redirect_title = ""
+			try:
+				redirect_title = tree.xpath( "//search/p[@title='%(title)s']/@redirecttitle" % locals() )[0]
+				print( "Weiterleitung zu \"%(title)s\" von \"%(redirect_title)s\"" % locals() )
+			except Exception as e:
+				pass # häufig
+			matching_title_words = 0
+			matching_redirect_words = 0
 			for word in args.lower().split():
 				if word in title.lower():
-					matching_words += 1
-			candidates.append( (-matching_words,len(title),i) )
+					#print( "%(word)s in: %(title)s" % locals() )
+					matching_title_words += 1
+				if word in redirect_title.lower():
+					#print( "%(word)s in: %(redirect_title)s" % locals() )
+					matching_redirect_words += 1
+			candidates.append( (-matching_title_words,len(title),i,"") )
+			if redirect_title:
+				candidates.append( (-matching_redirect_words,len(redirect_title),i,redirect_title) )
+		#print( candidates )
 		choice = sorted( candidates )[0]
 		n = choice[2] # ID des besten Treffers
 		title = titles[n] # Titel des besten Treffers
 		snippet = snippets[n] # Snippet des besten Treffers
+		redirect = choice[3] # ggF. Redirect
+		if redirect:
+			redirect = redirect + " => "
 		n += 1 # intuitive Zählung fängt bei 1 an
 		for key in SNIPPET_REPL:
 			snippet = snippet.replace( key, SNIPPET_REPL[key] )
@@ -85,7 +106,7 @@ def wiki_wiki( plugin, connection, channel, source_nick, args ):
 			touched = tree.xpath( "//page/@touched" )[0]
 		except Exception as e:
 			print( e )
-		connection.action( channel, "fand: %(title)s: %(snippet)s   [ %(url)s ]   (Treffer# %(n)d/%(hits)d)" % locals() )
+		connection.action( channel, "fand %(redirect)s%(title)s: %(snippet)s   [ %(url)s ]   (Treffer# %(n)d/%(hits)d)" % locals() )
 	except Exception as e:
 		print( e )
 		if suggestion:
