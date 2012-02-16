@@ -122,6 +122,8 @@ def handle_event( plugin, connection, event ):
 	channel = None
 	if target[0]=='#':
 		channel = target
+	else:
+		channel = source_nick
 	if channel:
 		args = event.arguments()
 		result = re.findall( "^!(\S+)\s*(.*)$", args[0] )
@@ -134,6 +136,7 @@ def handle_event( plugin, connection, event ):
 
 HANDLERS = {
 	"privmsg" : handle_event,
-	"pubmsg" : handle_event
+	"pubmsg" : handle_event,
+	"privnotice" : handle_event,
 }
 
