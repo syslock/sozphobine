@@ -15,7 +15,7 @@ def init( plugin ):
 def reinit( plugin ):
 	init( plugin )
 
-def check_nickserv_status( plugin ):
+def check_nickserv_status( timer, plugin ):
 	if plugin.bot.connection.get_nickname()!=plugin.bot.nick:
 		pass # TODO Nick wechseln
 	else:
@@ -46,7 +46,7 @@ HANDLERS = { "privnotice" : handle_notice }
 
 
 
-def send_nickserv_password( plugin, connection, nickserv_nick, nickserv_mask ):
+def send_nickserv_password( timer, plugin, connection, nickserv_nick, nickserv_mask ):
 	global password_timer, NICKSERV_ACCOUNTS
 	password_timer = None
 	account_key = ( connection.server, nickserv_mask )

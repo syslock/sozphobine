@@ -23,7 +23,7 @@ class Timer:
 	def process_once( self, plugin ):
 		if time.time()-self.time > self.delay:
 			self.time += self.delay # für Schleifen
-			self.callback( *self.callargs )
+			self.callback( self, *self.callargs )
 			return not self.loop
 		else:
 			return False

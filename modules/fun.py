@@ -216,7 +216,7 @@ def fun_order( plugin, connection, channel, source_nick, drink ):
 		(plugin,connection,channel,drink) )
 	orders[(connection,channel)] = timer
 	plugin.timers.append( timer )
-def serve_order( plugin, connection, channel, drink ):
+def serve_order( timer, plugin, connection, channel, drink ):
 	global orders
 	del orders[(connection,channel)]
 	waiter = "waiter"
