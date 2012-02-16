@@ -117,32 +117,19 @@ class Bot:
 		self.plugins = {}
 		self.next_handler_priority = 0
 		self.auto_rejoin_channels = set()
-		time.sleep(5) # FIXME: Timer?
-	def run( self ):
+	def run( self, stop_conditions=[] ):
 		while True:
+			stop = False
+			for stop_condition in stop_conditions:
+				stop = stop or stop_condition()
+			if stop:
+				break
 			self.irc.process_once()
 			for plugin in self.plugins.values():
 				plugin.process_once()
 			time.sleep(0.1)
-	def reconnect( self, msg="reconnect" ):
-		if self.connection and self.connection.connected:
-			self.connection.disconnect( msg )
-		# Versuche Verbindung ohne Invalidisierung verstreuter Connection-
-		# Referenzen wiederherzustellen:
-		time.sleep(5) # FIXME: Timer?
+	def reconnect( self ):
 		self.connection.connect( self.host, self.port, self.nick )
-		# FIXME: Falls das innerhalb kurzer Zeit zu einem neuen Fehler führt
-		# müssten wir wohl ein neues IRC-Objekt anlegen. Hierbei würden z.B.
-		# folgende Connection-Referenzen invalidisiert werden:
-		# - Eintrag in monitor.channels_by_con_and_name, der allerdings durch
-		#   das disconnect-Event bereits entfernt worden sein sollte
-		# - Argument einiger Timer-Instanzen in fun und nickserv 
-		# - Eigenschaft von Quiz-Instanzen in quiz
-		time.sleep(5) # FIXME: Timer?
-		for channel in self.auto_rejoin_channels:
-			self.connection.join( channel )
-		for name in self.plugins:
-			self.plugins[ name ].reinit()
 	def load_plugin( self, name ):
 		if name not in self.plugins:
 			self.plugins[ name ] = Plugin( name, bot=self )
@@ -155,8 +142,14 @@ class Bot:
 			self.plugins[ name ].reload()
 		else:
 			self.load_plugin( name )
+	def reinit_plugins( self ):
+		for name in self.plugins:
+			self.plugins[ name ].reinit()
 	def join( self, channel_name, auto_rejoin=True ):
 		if auto_rejoin:
 			self.auto_rejoin_channels.add( channel_name )
 		self.connection.join( channel_name )
+	def rejoin( self ):
+		for channel in self.auto_rejoin_channels:
+			self.connection.join( channel )
 
