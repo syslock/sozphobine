@@ -1,4 +1,4 @@
-import re
+import re, sys, time
 
 OWNER_MASK = "syslock!syslock@.*"
 
@@ -42,6 +42,9 @@ def handle_event( plugin, connection, event ):
 			connection.disconnect( "requested" )
 		if command=="quit":
 			connection.quit( "requested" )
+			sys.exit(0)
+		if command=="terminate":
+			sys.exit(0)
 
 HANDLERS = {
 	"privmsg" : handle_event,
