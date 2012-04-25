@@ -1,27 +1,47 @@
-﻿import random
+import random
 import math
 import time
 
-g_op_nick = None
-g_active  = None
+class class_dict(object):
+	pass
 
-g_pot     = None
-g_einsatz = None
-g_cards   = None
+g_game_states = {}
+g_game_state = None
 
-g_round     = None
-g_whos_turn = None
+def provide_state(event):
+	global g_game_states
+	global g_game_state
 
-g_players = None
-g_chips   = None
-g_folded  = None
+	channel = event.target()
 
-g_flop      = None
-g_checked   = None
-g_last_time = None
+	if channel not in g_game_states:
+		g_game_states[channel] = class_dict()
+		g_game_state = g_game_states[channel]
+
+		g_game_state.op_nick = None
+		g_game_state.active  = None
+
+		g_game_state.pot     = None
+		g_game_state.einsatz = None
+		g_game_state.cards   = None
+
+		g_game_state.round     = None
+		g_game_state.whos_turn = None
+
+		g_game_state.players = None
+		g_game_state.chips   = None
+		g_game_state.folded  = None
+
+		g_game_state.flop      = None
+		g_game_state.checked   = None
+		g_game_state.last_time = None
+	else:
+		g_game_state = g_game_states[channel]
 
 def irc_join(plugin, connection, event):
-	g_op_nick = False
+	global g_game_state
+	provide_state(event)
+	g_game_state.op_nick = False
 
 # picture_idx 0..8 => '2'..'10'; picture_idx 9..12 => 'B' 'D' 'K' 'A'
 # color_idx 0..3 => Pik Kreuz Herz Karo
@@ -411,22 +431,22 @@ assert hand_zwei_paare     > get_hand( [ mk(pic_B , 3), mk(pic_D , 3), mk(pic_K,
 assert hand_ein_paar       > get_hand( [ mk(pic_9 , 2), mk(pic_B , 3), mk(pic_D, 3), mk(pic_K, 3), mk(pic_A, 3) ] )[0]
 
 def reset_deck():
-	global g_deck
-	g_deck = []
+	global g_game_state
+	g_game_state.deck = []
 	for i in range(52):
-		g_deck.append(i)
+		g_game_state.deck.append(i)
 	random.seed()
 	for i in range(300):
 		pos1 = random.randint(0, 51)
 		pos2 = random.randint(0, 51)
-		temp = g_deck[pos1]
-		g_deck[pos1] = g_deck[pos2]
-		g_deck[pos2] = temp
+		temp = g_game_state.deck[pos1]
+		g_game_state.deck[pos1] = g_game_state.deck[pos2]
+		g_game_state.deck[pos2] = temp
 
 def take_card():
-	global g_deck
-	card = g_deck[-1]
-	g_deck = g_deck[:-1]
+	global g_game_state
+	card = g_game_state.deck[-1]
+	g_game_state.deck = g_game_state.deck[:-1]
 	return card
 
 def group(number):
@@ -532,18 +552,8 @@ def check_seven(seven_cards):
 	return highest, highest_desc
 
 def pubmsg(plugin, connection, event):
-	global g_active
-	global g_cards
-	global g_pot
-	global g_einsatz
-	global g_chips
-	global g_folded
-	global g_players		
-	global g_round
-	global g_whos_turn
-	global g_op_nick
-	global g_last_time
-	global g_checked
+	global g_game_state
+	provide_state(event)
 
 	channel = event.target()
 	nick = event.source().split('!')[0]
@@ -562,124 +572,110 @@ def pubmsg(plugin, connection, event):
 			pass
 
 	def may_check():
-		global g_round
-		global g_whos_turn
-		global g_checked
-		return g_round > 0 and (g_whos_turn == 0 or g_checked)
+		global g_game_state
+		return g_game_state.round > 0 and (g_game_state.whos_turn == 0 or g_game_state.checked)
 
 	join_hint = 'Wer möchte, kann jetzt join schreiben, um mitzuspielen.'
 
 	def give_pot(player):
-		global g_chips
-		global g_pot
-		global g_round
-		g_chips[player] += g_pot
-		say(colored(player) + ': Du bekommst den Pot und hast nun ' + str(g_chips[player])\
+		global g_game_state
+		g_game_state.chips[player] += g_game_state.pot
+		say(colored(player) + ': Du bekommst den Pot und hast nun ' + str(g_game_state.chips[player])\
 		+ ' Chips. ' + join_hint)
-		g_round = None
+		g_game_state.round = None
 
 	def pot_desc():
-		global g_pot
-		return 'Im Pot sind ' + str(g_pot) + ' Chips.'
+		global g_game_state
+		return 'Im Pot sind ' + str(g_game_state.pot) + ' Chips.'
 
 	def skip_foldeds():
-		global g_whos_turn
-		while g_whos_turn < len(g_players):
-			if g_players[g_whos_turn] not in g_folded: break
-			g_whos_turn += 1			
+		global g_game_state
+		while g_game_state.whos_turn < len(g_game_state.players):
+			if g_game_state.players[g_game_state.whos_turn] not in g_game_state.folded: break
+			g_game_state.whos_turn += 1			
 
 	def iter_ask():
-		global g_pot
-		global g_einsatz
-		global g_cards
-		global g_round
-		global g_whos_turn
-		global g_chips
-		global g_folded
-		global g_flop
-		global g_checked
-		global g_players
-		global g_last_time
+		global g_game_state
 
-		g_last_time = time.time()
+		g_game_state.last_time = time.time()
 
-		if g_round == None:
-			g_pot = 0
-			g_einsatz = 10
-			g_cards = {}
-			g_folded = {}
-			g_round = 0
-			g_whos_turn = None
-			g_flop = None
+		if g_game_state.round == None:
+			g_game_state.pot = 0
+			g_game_state.einsatz = 10
+			g_game_state.cards = {}
+			g_game_state.folded = {}
+			g_game_state.round = 0
+			g_game_state.whos_turn = None
+			g_game_state.flop = None
 
 		solvent_players = 0
-		for player in g_players:
-			if player not in g_folded:
-				if g_chips[player] > 0: solvent_players += 1
+		for player in g_game_state.players:
+			if player not in g_game_state.folded:
+				if g_game_state.chips[player] > 0: solvent_players += 1
 
 		if solvent_players == 0:
 			do_say = False
 		else:
 			do_say = True
 
-		if g_round == 0:
-			if g_whos_turn == None:
+		if g_game_state.round == 0:
+			if g_game_state.whos_turn == None:
 				reset_deck()
-				for player in g_players:
-					g_cards[player] = []
-					cards = g_cards[player]
+				for player in g_game_state.players:
+					g_game_state.cards[player] = []
+					cards = g_game_state.cards[player]
 					cards.append(take_card())
 					cards.append(take_card())
 
-				g_checked = False
-				g_whos_turn = 0
+				g_game_state.checked = False
+				g_game_state.whos_turn = 0
 				skip_foldeds()
 
 				say('Runde 1: PREFLOP. Jeder bekommt zwei Karten.')
 
-				for player in g_players:
-					if player not in g_folded:
-						notice(player, 'Deine Karten sind' + cards_desc(g_cards[player]))
+				for player in g_game_state.players:
+					if player not in g_game_state.folded:
+						notice(player, 'Deine Karten sind' + cards_desc(g_game_state.cards[player]))
 
-		elif g_round == 1:
-			if g_whos_turn == None:
-				g_flop = []
+		elif g_game_state.round == 1:
+			if g_game_state.whos_turn == None:
+				g_game_state.flop = []
 				for i in range(3):
-					g_flop.append(take_card())
+					g_game_state.flop.append(take_card())
 
-				g_checked = False
-				g_whos_turn = 0
+				g_game_state.checked = False
+				g_game_state.whos_turn = 0
 				skip_foldeds()
 
-				if do_say: say('Runde 2: FLOP' + cards_desc(g_flop))
+				if do_say: say('Runde 2: FLOP' + cards_desc(g_game_state.flop))
 
-		elif g_round == 2:
-			if g_whos_turn == None:
-				g_flop.append(take_card())
+		elif g_game_state.round == 2:
+			if g_game_state.whos_turn == None:
+				g_game_state.flop.append(take_card())
 
-				g_checked = False
-				g_whos_turn = 0
+				g_game_state.checked = False
+				g_game_state.whos_turn = 0
 				skip_foldeds()
 
-				if do_say: say('Runde 3: TURN CARD' + cards_desc(g_flop))
+				if do_say: say('Runde 3: TURN CARD' + cards_desc(g_game_state.flop))
 
-		elif g_round == 3:
-			if g_whos_turn == None:
-				g_flop.append(take_card())
+		elif g_game_state.round == 3:
+			if g_game_state.whos_turn == None:
+				g_game_state.flop.append(take_card())
 
-				g_checked = False
-				g_whos_turn = 0
+				g_game_state.checked = False
+				g_game_state.whos_turn = 0
 				skip_foldeds()
 
-				say('Letzte Runde: RIVER CARD' + cards_desc(g_flop))
+				say('Letzte Runde: RIVER CARD' + cards_desc(g_game_state.flop))
 
-		elif g_round == 4:
+		elif g_game_state.round == 4:
 			highest = -1
 			highest_desc = None
 			winners = []
-			for player in g_players:
-				if player not in g_folded:
-					hand, desc = check_seven(g_cards[player] + g_flop)
+			for player in g_game_state.players:
+				if player not in g_game_state.folded:
+					hand, desc = check_seven(g_game_state.cards[player] + g_game_state.flop)
 					if hand > highest:
 						highest = hand
 						highest_desc = desc
@@ -687,10 +683,10 @@ def pubmsg(plugin, connection, event):
 					elif hand == highest:
 						winners.append(player)
 			
-			split = int(g_pot / len(winners))
+			split = int(g_game_state.pot / len(winners))
 			
 			for winner in winners:
-				g_chips[winner] += split
+				g_game_state.chips[winner] += split
 
 			if len(winners) > 1:
 				text = 'Es gewinnen '
@@ -720,13 +716,13 @@ def pubmsg(plugin, connection, event):
 			text += str(split) + ' Chips. Es führt '
 			
 			iter = 0		
-			for player in sorted(g_chips, key=g_chips.get, reverse=True):
-				if g_chips[player] > 0:
-					chips = str(g_chips[player])
+			for player in sorted(g_game_state.chips, key=g_game_state.chips.get, reverse=True):
+				if g_game_state.chips[player] > 0:
+					chips = str(g_game_state.chips[player])
 				else:
 					chips = 'out'
 				text += player + ' (' + chips + ')'
-				if iter < len(g_chips) - 1:
+				if iter < len(g_game_state.chips) - 1:
 					if iter == 0:
 						text += ', gefolgt von '
 					else:
@@ -735,70 +731,69 @@ def pubmsg(plugin, connection, event):
 			text += '.'
 
 			say(text + ' ' + join_hint)
-			g_round = None
+			g_game_state.round = None
 
 			to_remove = []
-			for player in g_players:
-				if g_chips[player] <= 0:
+			for player in g_game_state.players:
+				if g_game_state.chips[player] <= 0:
 					to_remove.append(player)
 
 			for player in to_remove:
-				g_players.remove(player)
-				g_cards[player] = None
+				g_game_state.players.remove(player)
+				g_game_state.cards[player] = None
 
 			return
 
-		if g_round < 4:
+		if g_game_state.round < 4:
 			if may_check():
 				check = 'check, '
 			else:
 				check = ''
 
-			player = g_players[g_whos_turn]
+			player = g_game_state.players[g_game_state.whos_turn]
 
-			if g_chips[player] <= 0:
+			if g_game_state.chips[player] <= 0:
 				next_turn()
 				return True
 			else:
-				say(colored(esc_nick(g_players[g_whos_turn])) + ': ' + pot_desc() + ' Du hast ' + str(g_chips[player])\
-				+ ' Chips. Der Einsatz ist ' + str(g_einsatz) + ' Chips. Willst du ' + check + 'call, raise oder fold?')
+				say(colored(esc_nick(g_game_state.players[g_game_state.whos_turn])) + ': ' + pot_desc() + ' Du hast ' + str(g_game_state.chips[player])\
+				+ ' Chips. Der Einsatz ist ' + str(g_game_state.einsatz) + ' Chips. Willst du ' + check + 'call, raise oder fold?')
 	
 	def loop_ask():
 		while iter_ask(): None
 
 	def isop():
-		global g_op_nick
-		return nick == g_op_nick
+		global g_game_state
+		return nick == g_game_state.op_nick
 
 	def notop():
-		say(esc_nick(nick) + ': ' + g_op_nick + ' hat Poker schon gestartet.')
+		say(esc_nick(nick) + ': ' + g_game_state.op_nick + ' hat Poker schon gestartet.')
 
 	def setop():
-		global g_op_nick
-		if g_op_nick:
+		global g_game_state
+		if g_game_state.op_nick:
 			notop()
 		else:
-			g_op_nick = nick
+			g_game_state.op_nick = nick
 			# say(esc_nick(nick) + ': Du darfst sofort stop benutzen, andere müssten davor 3 Minuten warten.')
 
 	def join():
-		global g_round
-		global g_chips
-		if nick in g_players:
+		global g_game_state
+		if nick in g_game_state.players:
 			say(esc_nick(nick) + ': Du spielst bereits mit.')
 			return False
-		if g_round != None:
+		if g_game_state.round != None:
 			say(esc_nick(nick) + ': Bitte zu Beginn der nächsten Runde einsteigen.')
 			return False
-		pos = len(g_players)
-		g_players.append(nick)
+		pos = len(g_game_state.players)
+		g_game_state.players.append(nick)
 		say(esc_nick(nick) + ': Du spielst ab jetzt mit auf Platz 0,1' + str(1+pos) + reset_colors() + '.')
-		g_chips[nick] = 500
+		g_game_state.chips[nick] = 500
 		return True
 
 	if(irc_text == '!poker'):
-		if not g_active:
-			g_last_time = time.time()
+		if not g_game_state.active:
+			g_game_state.last_time = time.time()
 
 			help = [
 			[ 'stop', 'Poker beenden' ],
@@ -816,26 +811,26 @@ def pubmsg(plugin, connection, event):
 			say('Poker läuft schon, schreibe stop, wenn du es beenden willst.')
 			return
 
-		g_active = True
-		if not g_op_nick: setop()
+		g_game_state.active = True
+		if not g_game_state.op_nick: setop()
 
 		if isop():
-			g_players = []
-			g_chips = {}
-			g_round = None
+			g_game_state.players = []
+			g_game_state.chips = {}
+			g_game_state.round = None
 
 		if not join(): return
 
 	if(irc_text == 'stop'):
-		if g_active:
-			if isop() or g_last_time < time.time() - 180:
-				g_active = False
-				g_op_nick = None
+		if g_game_state.active:
+			if isop() or g_game_state.last_time < time.time() - 180:
+				g_game_state.active = False
+				g_game_state.op_nick = None
 				say('Poker wurde beendet.')
 			else:
 				say('Nur der Poker-Operator darf stop benutzen, andere müssen 3 Minuten warten.')
 
-	if not g_active:
+	if not g_game_state.active:
 		return
 
 	if(irc_text == 'join'):
@@ -848,18 +843,18 @@ def pubmsg(plugin, connection, event):
 	'look',
 	'call',
 	'raise',
-	'fold' ] and not nick in g_players:
+	'fold' ] and not nick in g_game_state.players:
 		say(esc_nick(nick) + ': Du willst mitspielen? Schreibe join, sobald eine Runde geendet hat.')
 		return
 
 	if(irc_text == 'part'):
-		g_players.remove(nick)
-		g_cards[nick] = None
+		g_game_state.players.remove(nick)
+		g_game_state.cards[nick] = None
 		say(esc_nick(nick) + ': Ok, du spielst ab jetzt nicht mehr mit.')
 
 	if(irc_text == 'players'):
 		joined = 'es spielen: '
-		for player in g_players:
+		for player in g_game_state.players:
 			joined += player + ', '
 		say(joined[:-2])
 
@@ -869,46 +864,44 @@ def pubmsg(plugin, connection, event):
 		# else:
 		loop_ask()
 
-	if not g_cards: return
+	if not g_game_state.cards: return
 
 	if(irc_text == 'look'):
-		if nick in g_folded:
+		if nick in g_game_state.folded:
 			say('Du hast keine Karten, weil du gefolded hast.')
 		else:
-			notice(nick, cards_desc(g_cards[nick]) + ' Du hast ' + str(g_chips[nick]) + ' Chips.')
+			notice(nick, cards_desc(g_game_state.cards[nick]) + ' Du hast ' + str(g_game_state.chips[nick]) + ' Chips.')
 
 	def check_turn():
-		if g_cards and not nick in g_cards:
+		if g_game_state.cards and not nick in g_game_state.cards:
 			say(esc_nick(nick) + ': Du spielst noch nicht mit.')
 			return False
 
-		if g_whos_turn != None and g_players[g_whos_turn] == nick:
+		if g_game_state.whos_turn != None and g_game_state.players[g_game_state.whos_turn] == nick:
 			return True
 		else:
 			say(esc_nick(nick) + ': Du kommst später dran.')
 			return False
 
 	def next_turn():
-		global g_whos_turn
-		global g_round
+		global g_game_state
 
-		g_whos_turn += 1
+		g_game_state.whos_turn += 1
 		skip_foldeds()
 
-		if g_whos_turn >= len(g_players):
-			g_whos_turn = None
-			g_round += 1
+		if g_game_state.whos_turn >= len(g_game_state.players):
+			g_game_state.whos_turn = None
+			g_game_state.round += 1
 
 	def einsatz(_raise):
-		global g_chips
-		global g_pot
-		einsatz = g_einsatz
+		global g_game_state
+		einsatz = g_game_state.einsatz
 		all_in = False
-		if einsatz >= g_chips[nick]:
-			einsatz = g_chips[nick]
+		if einsatz >= g_game_state.chips[nick]:
+			einsatz = g_game_state.chips[nick]
 			all_in = True
-		g_chips[nick] -= einsatz
-		g_pot += einsatz
+		g_game_state.chips[nick] -= einsatz
+		g_game_state.pot += einsatz
 		
 		text = esc_nick(nick) + ': Ok, '		
 		if _raise != None: text += 'um ' + str(_raise) + ' Chips erhöht und '
@@ -917,13 +910,13 @@ def pubmsg(plugin, connection, event):
 		if all_in:
 			text += 'Du gehst all in.'
 		else:
-			text += 'Du hast noch ' + str(g_chips[nick]) + ' Chips.'
+			text += 'Du hast noch ' + str(g_game_state.chips[nick]) + ' Chips.'
 		say(text)
 
 	if(irc_text == 'call'):
 		if not check_turn(): return
 		einsatz(None)
-		g_checked = False
+		g_game_state.checked = False
 		next_turn()
 		loop_ask()
 
@@ -934,38 +927,38 @@ def pubmsg(plugin, connection, event):
 			_raise = int(float(irc_text[5:]))
 		except Exception as e:
 			pass
-		if g_einsatz + _raise > g_chips[nick]:
-			say(colored(esc_nick(nick)) + ': ' + str(g_einsatz + _raise) + ' Chips Einsatz hast du nicht.')
+		if g_game_state.einsatz + _raise > g_game_state.chips[nick]:
+			say(colored(esc_nick(nick)) + ': ' + str(g_game_state.einsatz + _raise) + ' Chips Einsatz hast du nicht.')
 			# loop_ask()
 			return
-		g_einsatz += _raise
+		g_game_state.einsatz += _raise
 		einsatz(_raise)
-		g_checked = False
+		g_game_state.checked = False
 		next_turn()
 		loop_ask()
 
 	if(irc_text == 'fold'):
 		if not check_turn(): return
-		g_folded[nick] = True
-		g_cards[nick] = None		
-		# g_checked = False
+		g_game_state.folded[nick] = True
+		g_game_state.cards[nick] = None		
+		# g_game_state.checked = False
 
 		num_folded = 0
 		not_folded = None
-		for player in g_players:
-			if player in g_folded:
+		for player in g_game_state.players:
+			if player in g_game_state.folded:
 				num_folded += 1
 			else:
 				not_folded = player
 
 		text = esc_nick(nick) + ': Ok, du bist in dieser Runde draussen.'
 
-		if num_folded == len(g_players) - 1:
+		if num_folded == len(g_game_state.players) - 1:
 			say(text)
 			give_pot(not_folded)
-		elif num_folded == len(g_players): # wenn man allein gespielt hat
+		elif num_folded == len(g_game_state.players): # wenn man allein gespielt hat
 			say(text + ' Schreibe ask, um weiterzumachen. ' + join_hint)
-			g_round = None
+			g_game_state.round = None
 		else:
 			say(text)
 			next_turn()
@@ -975,13 +968,13 @@ def pubmsg(plugin, connection, event):
 		if not check_turn(): return
 		if may_check():
 			say(esc_nick(nick) + ': Ok, du machst keinen Einsatz.')
-			g_checked = True
+			g_game_state.checked = True
 			next_turn()
 			loop_ask()
 		else:
-			if g_round == 0:
+			if g_game_state.round == 0:
 				say(nick + ': Im Preflop kannst du nicht checken.')
-			elif g_whos_turn > 0 and not g_checked:
+			elif g_game_state.whos_turn > 0 and not g_game_state.checked:
 				say(nick + ': Du kannst nur checken, wenn alle vor dir auch checken.')
 			else:
 				say(nick + ': Du kannst nicht checken.')
