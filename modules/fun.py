@@ -1,4 +1,4 @@
-import re, random, time
+import re, random, time, os, datetime
 from bot import Timer, is_on_channel, same_nick
 
 
@@ -265,8 +265,23 @@ def fun_strike( plugin, connection, channel, source_nick, victim ):
 
 
 def fun_code( plugin, connection, channel, source_nick, victim ):
-	connection.privmsg( channel, "https://github.com/syslock/sozphobine" % locals() )
+	connection.action( channel, "ist quelloffen: https://github.com/syslock/sozphobine" % locals() )
 
+def fun_uptime( plugin, connection, channel, source_nick, victim ):
+	ps_start = os.popen( "ps -p %d -o lstart=" % (os.getpid()) ).read()[:-1]
+	dt_start = datetime.datetime.strptime( ps_start, '%a %b %d %H:%M:%S %Y' )
+	uptime = datetime.datetime.now() - dt_start
+	hours = int(uptime.seconds/60/60)
+	minutes = int(uptime.seconds/60%60)
+	seconds = int(uptime.seconds%60)
+	ut_string = "%s%s%s%s" % (
+		uptime.days and ("%d Tag" % (uptime.days) + (uptime.days>1)*"e")+", " or "",
+		hours and ("%d Stunde" % (hours) + (hours>1)*"n")+", " or "",
+		minutes and ("%d Minute" % (minutes) + (minutes>1)*"n")+", " or "",
+		seconds and ("%d Sekunde" % (seconds) + (seconds>1)*"n")+", " or "" )
+	if ut_string[-2:] == ", ":
+		ut_string = ut_string[:-2]+"."
+	connection.action( channel, "läuft schon "+ut_string )
 
 WEICHEI_LINES = []
 def fun_weichei( plugin, connection, channel, source_nick, victim ):

@@ -45,6 +45,8 @@ def handle_event( plugin, connection, event ):
 			sys.exit(0)
 		if command=="terminate":
 			sys.exit(0)
+		if command=="nick" and len(cargs)==1:
+			plugin.bot.connection.nick( cargs[0] )
 
 HANDLERS = {
 	"privmsg" : handle_event,
