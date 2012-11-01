@@ -234,7 +234,6 @@ def serve_order( timer, plugin, connection, channel, drink ):
 PHRASE_LINES = []
 def fun_phrase( plugin, connection, channel, source_nick, victim ):
 	if random.randint(1,10) in [1,2]:
-		# TODO: query http://sprichwort.gener.at/or/
 		url = "http://sprichwort.gener.at/or/"
 		resp = urllib.request.urlopen( url )
 		try:
@@ -244,7 +243,7 @@ def fun_phrase( plugin, connection, channel, source_nick, victim ):
 			try:
 				spwort = tree.xpath("string(//div[@class='spwort'])")
 				connection.action( channel, "sagt: "+ spwort +" [ "+ url +" ]" )
-				return
+				return # FIXME: Stil...
 			except Exception as e:
 				msg = "Konnte Schüttelsprichwort nicht finden: "+str(e)
 				print( msg )
