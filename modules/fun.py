@@ -1,5 +1,7 @@
-import re, random, time, os, datetime
+import re, random, time, os, datetime, io
 from bot import Timer, is_on_channel, same_nick
+import urllib, urllib.request, urllib.parse
+from lxml import etree
 
 
 last_action_time = 0
@@ -231,10 +233,30 @@ def serve_order( timer, plugin, connection, channel, drink ):
 
 PHRASE_LINES = []
 def fun_phrase( plugin, connection, channel, source_nick, victim ):
-	global PHRASE_LINES
-	if not PHRASE_LINES:
-		PHRASE_LINES = load_lines_from_file( "phrases.txt" )
-	connection.action( channel, "sagt: " + random.choice(PHRASE_LINES) )
+	if random.randint(1,10) in [1,2]:
+		# TODO: query http://sprichwort.gener.at/or/
+		url = "http://sprichwort.gener.at/or/"
+		resp = urllib.request.urlopen( url )
+		try:
+			result = resp.readall().decode("ISO-8859-1")
+			html_parser = etree.HTMLParser()
+			tree = etree.parse( io.StringIO(result), html_parser )
+			try:
+				spwort = tree.xpath("string(//div[@class='spwort'])")
+				connection.action( channel, "sagt: "+ spwort +" [ "+ url +" ]" )
+				return
+			except Exception as e:
+				msg = "Konnte Schüttelsprichwort nicht finden: "+str(e)
+				print( msg )
+		except Exception as e:
+			msg = "Konnte Schüttelsprichwort nicht parsen: "+str(e)
+			print( msg )
+		connection.action( channel, ".oO("+ msg +")" )
+	else:
+		global PHRASE_LINES
+		if not PHRASE_LINES:
+			PHRASE_LINES = load_lines_from_file( "phrases.txt" )
+		connection.action( channel, "sagt: " + random.choice(PHRASE_LINES) )
 
 
 def fun_relax( plugin, connection, channel, source_nick, victim ):
