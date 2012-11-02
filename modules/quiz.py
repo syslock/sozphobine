@@ -1,5 +1,7 @@
 import time, re, random, os, os.path, imp
 
+DEBUG = True
+
 QUIZ_CHANNELS = []
 
 EASY = 0
@@ -10,9 +12,9 @@ HARD = 2
 last_action_time = 0
 ACTION_TIMEOUT = 1.5
 
-def approve_action():
+def approve_action( timeout=ACTION_TIMEOUT ):
 	global last_action_time
-	if last_action_time + ACTION_TIMEOUT > time.time():
+	if last_action_time + timeout > time.time():
 		return False
 	else:
 		last_action_time = time.time()
@@ -169,20 +171,22 @@ class Quiz:
 		else:
 			return 0
 	def check_answer( self, player, answer ):
-		problem = self.problems[self.problem_count]
-		if self.state == self.show_hint and problem.check_answer( answer ):
-			self.add_score( player, int(problem.score) )
-			score = None
-			points = 0
-			position = 0
-			for score in self.get_ranking():
-				position += 1
-				if score[1] == player:
-					points = score[0][0]
-			points = self.get_score( player )
-			self.connection.privmsg( self.channel, "%(player)s hat gelöst!  Punktestand: %(points)d  (%(position)d. Platz)" % locals() )
-			self.next_action = time.time() + 1 # Schnell Lösen!
-			self.state = self.show_solution
+		if self.state == self.show_hint:
+			problem = self.problems[self.problem_count]
+			if problem.check_answer( answer ):
+				self.add_score( player, int(problem.score) )
+				score = None
+				points = 0
+				position = 0
+				for score in self.get_ranking():
+					position += 1
+					if score[1] == player:
+						points = score[0][0]
+						break
+				points = self.get_score( player )
+				self.connection.privmsg( self.channel, "%(player)s hat gelöst!  Punktestand: %(points)d  (%(position)d. Platz)" % locals() )
+				self.next_action = time.time() + 1 # Schnell Lösen!
+				self.state = self.show_solution
 	def check_termination_quorum( self, voter ):
 		if self.state in [self.idle]:
 			return False
@@ -279,22 +283,29 @@ PROBLEMS = []
 import quizproblems
 PROBLEMS += quizproblems.PROBLEMS
 
-def load_quizdata( file_pattern, reload=False ):
+def load_quizdata( file_pattern, reload=False, list=False ):
 	global PROBLEMS
-	if reload:
-		globals()["PROBLEMS"] = []
-	if file_pattern == "internal":
-		imp.reload( quizproblems )
-		PROBLEMS += quizproblems.PROBLEMS
+	if not list:
+		if reload:
+			globals()["PROBLEMS"] = []
+		if file_pattern == "internal":
+			imp.reload( quizproblems )
+			PROBLEMS += quizproblems.PROBLEMS
 	datadir = "quizdata"
 	files = []
 	for file_name in os.listdir( datadir ):
-		if re.match( file_pattern, file_name ):
-			files.append( file_name )
-	for file_name in files:
-		file_path = os.path.join( datadir, file_name )
-		file_path = file_path.replace( "..", "" )
-		MoxquizzReader( file_path, globals()["PROBLEMS"] )
+		try:
+			if re.match( file_pattern, file_name ):
+				files.append( file_name )
+		except Exception as e:
+			print( str(load_quizdata)+" ("+file_pattern+"): "+str(e) )
+			break
+	if not list:
+		for file_name in files:
+			file_path = os.path.join( datadir, file_name )
+			file_path = file_path.replace( "..", "" )
+			MoxquizzReader( file_path, globals()["PROBLEMS"] )
+	return files
 		
 def reload_quizdata( file_pattern ):
 	load_quizdata( file_pattern, reload=True )
@@ -309,7 +320,11 @@ def find_problems_by_tags( filter_tags=[] ):
 		for tag in problem.tags:
 			matched = not filter_tags
 			for filter_tag in filter_tags:
-				matched = re.findall( filter_tag, tag, re.IGNORECASE ) != []
+				try:
+					matched = re.findall( filter_tag, tag, re.IGNORECASE ) != []
+				except Exception as e:
+					print( str(find_problems_by_tags)+" ("+str(filter_tag)+"): "+str(e) )
+					return problems_by_tags, [problem for problem in unique_problems.keys()]
 				if matched:
 					break
 			if matched:
@@ -319,6 +334,21 @@ def find_problems_by_tags( filter_tags=[] ):
 				unique_problems[ problem ] = True
 	return problems_by_tags, [problem for problem in unique_problems.keys()]
 
+def print_help( plugin, connection, response_target ):
+	connection.privmsg( response_target, "Quizbefehle: !ask [ANZAHL] [REGEX ...]: Quiz starten (mit ANZAHL Fragen und auf REGEX passenden Kategorien)," )
+	connection.privmsg( response_target, "    !stop : Quiz anhalten, !revolt : Frage überspringen, !score : Punktezahl anzeigen," )
+	connection.privmsg( response_target, "    !tags REGEX : auf REGEX passende Tags für !ask und Statistiken dazu anzeigen," )
+	connection.privmsg( response_target, "    !quizdata reload REGEX : passende Quizfragen-Dateien neu laden," )
+	connection.privmsg( response_target, "    !quizdata list REGEX : passende Quizfragen-Dateien auflisten," )
+	print_problem_stats( plugin, connection, response_target )
+
+def print_regex_help( plugin, connection, response_target ):
+	connection.privmsg( response_target, 
+		"Hinweis: Verwendeter Regex-Dialekt: http://docs.python.org/3.2/library/re.html#regular-expression-syntax" )
+
+def print_problem_stats( plugin, connection, response_target ):
+	global PROBLEMS
+	connection.privmsg( response_target, "%d Fragen verfügbar." % len(PROBLEMS) )
 
 quizzes_by_channel = {}
 
@@ -328,17 +358,29 @@ def handle_event( plugin, connection, event ):
 	source_nick = source.split("!")[0]
 	target = event.target()
 	args = event.arguments()
-	response_target = source_nick
 	if target in QUIZ_CHANNELS:
 		response_target = target
+	elif target==connection.get_nickname():
+		response_target = source_nick
+	else:
+		return # TODO: evtl. Hinweis auf Quiz-Channel geben
 	quiz = None
 	if response_target in quizzes_by_channel:
 		quiz = quizzes_by_channel[ response_target ]
+	if event.eventtype()=="join":
+		if not quiz and approve_action( 10 ):
+			print_help( plugin, connection, response_target )
+		elif approve_action():
+			connection.privmsg( response_target, "Hallo %s! Es läuft gerade ein Quiz. Rate einfach mit!" % source_nick )
+			quiz.show_ranking()
+		return
 	command = re.match( "^!(\S+)", args[0] )
 	cargs = re.findall( "\s+(\S+)", args[0] )
 	if command:
 		command = command.group(1)
-	if command in ["ask", "quiz"]:
+	if command=="help" and approve_action( 10 ):
+		print_help( plugin, connection, response_target )
+	elif command in ["ask", "quiz"]:
 		if not quiz or quiz.state == quiz.idle:
 			limit = 30
 			for carg in cargs:
@@ -356,11 +398,13 @@ def handle_event( plugin, connection, event ):
 	elif command == "tags" and approve_action():
 		probs_by_tags, probs = find_problems_by_tags( cargs )
 		taglist = ", ".join( probs_by_tags.keys() )
-		if len(taglist)>100:
-			taglist = taglist[:100]+"..."
+		if len(taglist)>300:
+			taglist = taglist[:297]+"..."
 		connection.privmsg( response_target, 
 			"Tags: %s (insgesamt %d mit %d Fragen)" \
 			% (taglist, len(probs_by_tags), len(probs)) )
+		if( len(probs)==0 ):
+			print_regex_help( plugin, connection, response_target )
 	elif quiz and command == "stop":
 		if quiz.check_termination_quorum( source_nick ):
 			quiz.state = quiz.show_ranking
@@ -373,17 +417,27 @@ def handle_event( plugin, connection, event ):
 		if cargs and cargs[0] == "clear":
 			globals()["PROBLEMS"] = []
 			connection.privmsg( response_target, "%d Fragen verfügbar." % len(PROBLEMS) )
-		elif len(cargs)==2 and cargs[0] in ("load","reload"):
-			reload = False
-			if cargs[0] == "reload":
-				reload = True
+		elif len(cargs) in [1,2] and cargs[0] in ("load","reload","list"):
+			reload = (cargs[0] == "reload")
+			list = (cargs[0] == "list")
+			file_pattern = len(cargs)==2 and cargs[1] or ".*"
+			files = []
 			try:
-				load_quizdata( cargs[1], reload )
+				files = load_quizdata( file_pattern, reload=reload, list=list )
+				msg = "Dateien: "+", ".join(files)
+				if len(msg) > 400:
+					msg = msg[:397]+"..."
+				connection.privmsg( response_target, msg )
 			except Exception as e:
-				connection.privmsg( response_target, "Kann %s nicht laden: %s" % (cargs[1], str(e)) )
-			connection.privmsg( response_target, "%d Fragen verfügbar." % len(PROBLEMS) )
+				connection.privmsg( response_target, "Kann %s nicht laden: %s" % (file_pattern, str(e)) )
+			if not list:
+				print_problem_stats( plugin, connection, response_target )
+			if not files:
+				print_regex_help( plugin, connection, response_target )
 	elif response_target in quizzes_by_channel:
 		quizzes_by_channel[ response_target ].check_answer( source_nick, args[0] )
+	elif approve_action( 10 ):
+		print_help( plugin, connection, response_target )
 
 def process_once( plugin ):
 	for quiz in quizzes_by_channel.values():
@@ -392,6 +446,6 @@ def process_once( plugin ):
 HANDLERS = {
 	"privmsg" : handle_event,
 	"pubmsg" : handle_event,
-	#"join" : handle_join,
+	"join" : handle_event,
 }
 
