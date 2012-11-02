@@ -1,6 +1,6 @@
 import time, re, random, os, os.path, imp
 
-DEBUG = True
+#DEBUG = True
 
 QUIZ_CHANNELS = []
 
@@ -335,7 +335,7 @@ def find_problems_by_tags( filter_tags=[] ):
 	return problems_by_tags, [problem for problem in unique_problems.keys()]
 
 def print_help( plugin, connection, response_target ):
-	connection.privmsg( response_target, "Quizbefehle: !ask [ANZAHL] [REGEX ...]: Quiz starten (mit ANZAHL Fragen und auf REGEX passenden Kategorien)," )
+	connection.privmsg( response_target, "Quizbefehle: !ask [ANZAHL] [REGEX ...]: Quiz starten (mit ANZAHL Fragen und auf REGEX passenden Tags)," )
 	connection.privmsg( response_target, "    !stop : Quiz anhalten, !revolt : Frage überspringen, !score : Punktezahl anzeigen," )
 	connection.privmsg( response_target, "    !tags REGEX : auf REGEX passende Tags für !ask und Statistiken dazu anzeigen," )
 	connection.privmsg( response_target, "    !quizdata reload REGEX : passende Quizfragen-Dateien neu laden," )
