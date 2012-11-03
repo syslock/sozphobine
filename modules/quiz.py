@@ -368,9 +368,9 @@ def handle_event( plugin, connection, event ):
 	if response_target in quizzes_by_channel:
 		quiz = quizzes_by_channel[ response_target ]
 	if event.eventtype()=="join":
-		if not quiz and approve_action( 10 ):
+		if (not quiz or (quiz.state == quiz.idle)) and approve_action( 10 ):
 			print_help( plugin, connection, response_target )
-		elif approve_action():
+		elif quiz and (quiz.state != quiz.idle) and approve_action():
 			connection.privmsg( response_target, "Hallo %s! Es läuft gerade ein Quiz. Rate einfach mit!" % source_nick )
 			quiz.show_ranking()
 		return
