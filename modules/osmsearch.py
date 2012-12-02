@@ -2,8 +2,6 @@ import re, time, io
 import urllib, urllib.request, urllib.parse
 from lxml import etree
 
-DEBUG = True
-
 last_action_time = 0
 ACTION_TIMEOUT = 1.5
 
@@ -25,17 +23,14 @@ def osm_zeig( plugin, connection, channel, source_nick, args ):
 	suggestion = None
 	try:
 		query = urllib.parse.urlencode( { "q" : args } )
-		print( query )
 		url = "http://nominatim.openstreetmap.org/search/?%(query)s" % locals()
 		print( url )
 		resp = urllib.request.urlopen( url )
 		result = resp.readall().decode("utf-8")
 		# XML-Namespace-Referenz rauspatchen, dar sonst nervige Namespace-Präfixe nutzen müssten oder schlimmeres:
 		result = re.sub(r' xmlns="[^"]*"','', result )
-		#open( "osmsearch_result.dmp", "w" ).write( result )
 		tree = etree.parse( io.StringIO(result) )
 		results = tree.xpath( "//div[@class='result']" )
-		print( len(results) )
 		if not results:
 			error = tree.xpath( "//div[@class='noresults']" )
 			if error:
