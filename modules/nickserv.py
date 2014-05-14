@@ -30,7 +30,7 @@ def handle_notice( plugin, connection, event ):
 	if source_nick.lower()=="nickserv":
 		args = event.arguments()
 		words = args and args[0].split() or []
-		if len(words)==3 and words[0].lower()=="status":
+		if len(words)>=3 and words[0].lower()=="status":
 			status_nick = words[1]
 			status = int(words[2])
 			if status not in [2,3] and not password_timer:
