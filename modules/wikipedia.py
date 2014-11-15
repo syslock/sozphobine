@@ -67,11 +67,7 @@ def wiki_wiki( plugin, connection, channel, source_nick, args ):
 				print( "Weiterleitung zu \"%(title)s\" von \"%(redirect_title)s\"" % locals() )
 			except Exception as e:
 				pass # häufig
-			candidates.append( (0,len(title),i,"") )
-			if redirect_title:
-				candidates.append( (0,len(redirect_title),i,redirect_title) )
-		#print( candidates )
-		#choice = sorted( candidates )[0]
+			candidates.append( (0,len(title),i,redirect_title) )
 		choice = candidates[0]
 		n = choice[2] # ID des besten Treffers
 		title = titles[n] # Titel des besten Treffers
