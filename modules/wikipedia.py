@@ -16,7 +16,7 @@ def approve_action():
 
 
 SNIPPET_REPL = {
-	"<span class='searchmatch'>" : "\x034",
+	"<span.*?>" : "\x034",
 	"</span>" : "\x03",
 	"<b>" : "",
 	"</b>" : "",
@@ -67,20 +67,12 @@ def wiki_wiki( plugin, connection, channel, source_nick, args ):
 				print( "Weiterleitung zu \"%(title)s\" von \"%(redirect_title)s\"" % locals() )
 			except Exception as e:
 				pass # häufig
-			matching_title_words = 0
-			matching_redirect_words = 0
-			for word in args.lower().split():
-				if word in title.lower():
-					#print( "%(word)s in: %(title)s" % locals() )
-					matching_title_words += 1
-				if word in redirect_title.lower():
-					#print( "%(word)s in: %(redirect_title)s" % locals() )
-					matching_redirect_words += 1
-			candidates.append( (-matching_title_words,len(title),i,"") )
+			candidates.append( (0,len(title),i,"") )
 			if redirect_title:
-				candidates.append( (-matching_redirect_words,len(redirect_title),i,redirect_title) )
+				candidates.append( (0,len(redirect_title),i,redirect_title) )
 		#print( candidates )
-		choice = sorted( candidates )[0]
+		#choice = sorted( candidates )[0]
+		choice = candidates[0]
 		n = choice[2] # ID des besten Treffers
 		title = titles[n] # Titel des besten Treffers
 		snippet = snippets[n] # Snippet des besten Treffers
@@ -89,7 +81,7 @@ def wiki_wiki( plugin, connection, channel, source_nick, args ):
 			redirect = redirect + " => "
 		n += 1 # intuitive Zählung fängt bei 1 an
 		for key in SNIPPET_REPL:
-			snippet = snippet.replace( key, SNIPPET_REPL[key] )
+			snippet = re.sub( key, SNIPPET_REPL[key], snippet )
 		query = urllib.parse.urlencode( { "titles" : title } )
 		resp = urllib.request.urlopen( "http://de.wikipedia.org/w/api.php?format=xml&action=query&%(query)s&prop=info&inprop=url" % locals() )
 		result = resp.readall().decode("utf-8")
