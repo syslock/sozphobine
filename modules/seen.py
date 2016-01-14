@@ -102,8 +102,9 @@ def seen_seen( plugin, connection, channel, source_nick, nick ):
 				select max(id) from seen 
 				where nick like ? and channel=? and server=?)""",
 			(nick.strip().lower().replace('*','%'),channel,connection.server) )
-		for row in c:
-			_id, _time, _nick, _eventtype, _msg = row
+		rows = c.fetchall()
+		if rows:
+			_id, _time, _nick, _eventtype, _msg = rows[0]
 			_time = time.strftime( '%d.%m.%Y %H:%M:%S',time.localtime( _time ) )
 			txt = "hat %(_nick)s zuletzt am %(_time)s gesehen, als sie oder er"
 			if _eventtype=="join":
@@ -120,6 +121,10 @@ def seen_seen( plugin, connection, channel, source_nick, nick ):
 				txt += " (%(_msg)s)"
 			txt += "."
 			connection.action( channel, txt % locals() )
+		else:
+			txt = "ich kann mich nicht erinnern, dass %s jemals hier gewesen wäre."
+			connection.privmsg( channel, txt % nick )
+		c.execute("""DELETE FROM "seen" WHERE "time"<?;""", (time.time() - (3600 * 24 * 30 * 6),))
 		con.commit()
 		c.close()
 
