@@ -1,6 +1,6 @@
 import re, time, io
 import urllib, urllib.request, urllib.parse
-from lxml import etree
+import json
 
 last_action_time = 0
 ACTION_TIMEOUT = 1.5
@@ -23,26 +23,22 @@ def osm_zeig( plugin, connection, channel, source_nick, args ):
 	suggestion = None
 	try:
 		query = urllib.parse.urlencode( { "q" : args } )
-		url = "http://nominatim.openstreetmap.org/search/?%(query)s" % locals()
+		url  = "http://nominatim.openstreetmap.org/search/?%(query)s" % locals()
+		url1 = "http://nominatim.openstreetmap.org/search/?format=jsonv2&%(query)s" % locals()
 		print( url )
-		resp = urllib.request.urlopen( url )
-		result = resp.readall().decode("utf-8")
-		# XML-Namespace-Referenz rauspatchen, dar sonst nervige Namespace-Präfixe nutzen müssten oder schlimmeres:
-		result = re.sub(r' xmlns="[^"]*"','', result )
-		tree = etree.parse( io.StringIO(result) )
-		results = tree.xpath( "//div[@class='result']" )
-		if not results:
-			error = tree.xpath( "//div[@class='noresults']" )
-			if error:
-				error = " (%s)." % error[0].xpath("string(.)")
+		resp = urllib.request.urlopen( url1 )
+		results = json.loads( resp.read().decode("utf-8") )
+		if results:
+			name = results[0]['display_name']
+			pos  = "%.4f,%.4f" % ( (float(results[0]['lat']),
+			                        float(results[0]['lon'])) )
+			connection.action( channel, "fand %(name)s (%(pos)s)   [ %(url)s ]" % locals() )
+		else:
+			if resp.reason != "OK":
+				error = " (%s)." % resp.reason
 			else:
 				error = "."
 			connection.action( channel, "hat dazu nichts auf openstreetmap.org gefunden"+error )
-		else:
-			first = results[0]
-			name = first.xpath( "string(//span[@class='name'])" )
-			pos = first.xpath( "string(//span[@class='latlon'])" )
-			connection.action( channel, "fand %(name)s (%(pos)s)   [ %(url)s ]" % locals() )
 	except Exception as e:
 		print( e )
 		connection.action( channel, "hat dazu nichts auf openstreetmap.org gefunden. (Verarbeitungsfehler)" )
