@@ -30,7 +30,7 @@ def commons_bild( plugin, connection, channel, source_nick, args ):
 	try:
 		query = urllib.parse.urlencode( { "search" : args } )
 		resp = urllib.request.urlopen( "http://commons.wikimedia.org/w/api.php?format=xml&action=opensearch&%(query)s&namespace=6&limit=100" % locals() )
-		result = resp.readall().decode("utf-8")
+		result = resp.read().decode("utf-8")
 		result = re.sub( r'xmlns="[^"]*"', '', result ) # try to strip namespaces
 		#open( "/tmp/commons_resp.dmp", "wb" ).write( result.encode("utf-8") )
 		tree = etree.parse( io.StringIO(result) )

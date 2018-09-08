@@ -40,7 +40,7 @@ def wiki_quote( plugin, connection, channel, source_nick, args ):
 		#print( query )
 		for probe in range(3):
 			resp = urllib.request.urlopen( "http://de.wikiquote.org/w/api.php?action=query&list=search&%(query)s&format=xml&srlimit=10" % locals() )
-			result = resp.readall().decode("utf-8")
+			result = resp.read().decode("utf-8")
 			tree = etree.parse( io.StringIO(result) )
 			error = tree.xpath( "/api/error/@code" )
 			if error:
@@ -98,7 +98,7 @@ def wiki_quote( plugin, connection, channel, source_nick, args ):
 			snippet = snippet.replace( key, SNIPPET_REPL[key] )
 		query = urllib.parse.urlencode( { "titles" : title } )
 		resp = urllib.request.urlopen( "http://de.wikiquote.org/w/api.php?format=xml&action=query&%(query)s&prop=info&inprop=url" % locals() )
-		result = resp.readall().decode("utf-8")
+		result = resp.read().decode("utf-8")
 		tree = etree.parse( io.StringIO(result) )
 		url = tree.xpath( "//page/@fullurl" )[0]
 		for key in URL_REPL:
@@ -113,7 +113,7 @@ def wiki_quote( plugin, connection, channel, source_nick, args ):
 		except Exception as e:
 			print( e )
 		resp = urllib.request.urlopen( "http://de.wikiquote.org/w/api.php?action=query&%(query)s&format=xml&export&exportnowrap" % locals() )
-		result = resp.readall().decode("utf-8")
+		result = resp.read().decode("utf-8")
 		result = re.sub( "<mediawiki.*?>", "<mediawiki>", result )
 		tree = etree.parse( io.StringIO(result) )
 		text = tree.xpath( "string(/mediawiki/page/revision/text)" )

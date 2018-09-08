@@ -237,7 +237,7 @@ def fun_phrase( plugin, connection, channel, source_nick, victim ):
 		url = "http://sprichwort.gener.at/or/"
 		resp = urllib.request.urlopen( url )
 		try:
-			result = resp.readall().decode("ISO-8859-1")
+			result = resp.read().decode("ISO-8859-1")
 			html_parser = etree.HTMLParser()
 			tree = etree.parse( io.StringIO(result), html_parser )
 			try:

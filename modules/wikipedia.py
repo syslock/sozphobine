@@ -39,7 +39,7 @@ def wiki_wiki( plugin, connection, channel, source_nick, args ):
 	try:
 		query = urllib.parse.urlencode( { "srsearch" : args } )
 		resp = urllib.request.urlopen( "http://de.wikipedia.org/w/api.php?format=xml&action=query&list=search&%(query)s&srprop=snippet|redirecttitle&srlimit=10" % locals() )
-		result = resp.readall().decode("utf-8")
+		result = resp.read().decode("utf-8")
 		tree = etree.parse( io.StringIO(result) )
 		hits = 0
 		try:
@@ -80,7 +80,7 @@ def wiki_wiki( plugin, connection, channel, source_nick, args ):
 			snippet = re.sub( key, SNIPPET_REPL[key], snippet )
 		query = urllib.parse.urlencode( { "titles" : title } )
 		resp = urllib.request.urlopen( "http://de.wikipedia.org/w/api.php?format=xml&action=query&%(query)s&prop=info&inprop=url" % locals() )
-		result = resp.readall().decode("utf-8")
+		result = resp.read().decode("utf-8")
 		tree = etree.parse( io.StringIO(result) )
 		url = tree.xpath( "//page/@fullurl" )[0]
 		for key in URL_REPL:
